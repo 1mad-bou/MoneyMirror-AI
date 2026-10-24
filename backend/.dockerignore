@@ -1,0 +1,8 @@
+.venv/
+.vscode/
+.idea/
+database.db/
+.gitpod.yml
+**/__pycache__/
+.pytest_cache/
+storage/
