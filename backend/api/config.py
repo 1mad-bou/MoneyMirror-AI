@@ -55,7 +55,7 @@ class Settings(BaseSettings):
 
     # Gemma (Google AI Studio)
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMMA_MODEL: str = os.getenv("GEMMA_MODEL", "gemma-3-27b-it")
+    GEMMA_MODEL: str = os.getenv("GEMMA_MODEL", "gemini-3.1-flash-lite")
     GEMMA_API_BASE: str = os.getenv(
         "GEMMA_API_BASE", "https://generativelanguage.googleapis.com/v1beta"
     )

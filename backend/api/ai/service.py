@@ -135,42 +135,48 @@ def retrieve_relevant_transactions(db: Session, user_id: int, query: str, limit:
 
 
 def call_gemma(prompt: str, max_tokens: int = 800) -> str:
-    """Call Gemma 3 via Google AI Studio REST API.
-
-    Handles the specific constraints of the Gemma endpoint on generativelanguage:
-    - Prepends system prompt to the user turn (no developer instructions payload).
-    - Uses plain text response (parses JSON client-side).
-    """
+    """Call Google AI Studio REST API with automatic model fallback."""
     if not settings.GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY is not configured.")
 
-    url = f"{settings.GEMMA_API_BASE}/models/{settings.GEMMA_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
-    payload = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": prompt}],
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": max_tokens,
-        },
-    }
+    models_to_try = [settings.GEMMA_MODEL]
+    for fallback in ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemma-4-31b-it"]:
+        if fallback not in models_to_try:
+            models_to_try.append(fallback)
 
-    with httpx.Client(timeout=settings.GEMMA_TIMEOUT_SECONDS) as client:
-        resp = client.post(url, json=payload)
-        if resp.status_code != 200:
-            logger.error(f"Gemma API error ({resp.status_code}): {resp.text}")
-            raise RuntimeError(f"Gemma API returned status {resp.status_code}")
-        data = resp.json()
+    last_error = None
+    for model_name in models_to_try:
+        url = f"{settings.GEMMA_API_BASE}/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
+        payload = {
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": prompt}],
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": max_tokens,
+            },
+        }
 
-    candidates = data.get("candidates", [])
-    if candidates and "content" in candidates[0]:
-        parts = candidates[0]["content"].get("parts", [])
-        if parts and "text" in parts[0]:
-            return parts[0]["text"].strip()
-    return ""
+        try:
+            with httpx.Client(timeout=settings.GEMMA_TIMEOUT_SECONDS) as client:
+                resp = client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"].strip()
+                logger.warning(f"AI model {model_name} error ({resp.status_code}): {resp.text[:200]}")
+                last_error = f"Status {resp.status_code}: {resp.text[:200]}"
+        except Exception as e:
+            logger.warning(f"AI model {model_name} connection error: {e}")
+            last_error = str(e)
+
+    raise RuntimeError(f"All AI provider models failed. Last error: {last_error}")
 
 
 # =========================================================================
