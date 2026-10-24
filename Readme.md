@@ -26,6 +26,7 @@
 
 - [Video Demo](#video-demo)
 - [Overview](#overview)
+- [Screenshots & UI Preview](#screenshots--ui-preview)
 - [Project Flow & Architecture](#project-flow--architecture)
   - [Core Workflow](#1-the-core-pipeline)
   - [End-to-End System Flow](#2-end-to-end-system-flow)
@@ -56,6 +57,24 @@ A short walkthrough of MoneyMirror AI, covering receipt scanning, natural langua
 **MoneyMirror AI** is a personal finance management platform designed to eliminate the friction of tracking expenses. Instead of tedious manual entry, users can capture receipts via camera/upload or express transactions in natural language. An embedded AI vision and OCR engine extracts transaction metadata into drafts, allowing users to inspect and adjust the figures before confirming.
 
 Once recorded, transactions are indexed with dense vector embeddings (`FastEmbed` + `pgvector`), enabling a conversational, **read-only RAG (Retrieval-Augmented Generation) financial assistant** to answer queries, analyze habits, and propose actionable spending-reduction strategies based strictly on real personal data.
+
+---
+
+## 📸 Screenshots & UI Preview
+
+### 🏠 Dashboard & 🧾 Receipt Scanning
+| **Home Dashboard** | **Receipt Scanning & OCR Extraction** |
+|:---:|:---:|
+| ![Home Dashboard](imgs/home.png) | ![Scan Receipt](imgs/scan-receipt.png) |
+| *Cash balance, recent activity, and quick money actions* | *Receipt image upload, OCR line-item parsing & confirmation* |
+
+<br>
+
+### 🤖 AI Financial Assistant & 💬 RAG Chatbot
+| **AI Assistant Overview** | **Interactive Financial Chatbot** |
+|:---:|:---:|
+| ![AI Assistant Overview](imgs/ai_agent.png) | ![RAG Financial Chat](imgs/chat.png) |
+| *RAG-powered financial intelligence & insights* | *Read-only conversational advice grounded in real data* |
 
 ---
 
@@ -186,6 +205,11 @@ MoneyMirror-AI/
 ├── PRD.md                       # Product Requirements Document
 ├── design.md                    # Frontend visual & design system specifications
 ├── Readme.md                    # Project documentation & architecture overview
+├── imgs/                        # Application UI screenshots and visual assets
+│   ├── home.png                 # Home dashboard & balance overview
+│   ├── scan-receipt.png         # Receipt scanning & OCR extraction view
+│   ├── ai_agent.png             # AI assistant interface overview
+│   └── chat.png                 # RAG financial assistant conversational chat
 │
 ├── backend/                     # FastAPI Application
 │   ├── Dockerfile               # Backend Dockerfile with FastEmbed pre-caching
