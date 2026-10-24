@@ -1,14 +1,15 @@
 import React from 'react';
-import { 
-  Home, 
-  Activity, 
-  PlusCircle, 
-  Receipt, 
-  Bot, 
-  Settings, 
-  LogOut, 
-  Sparkles,
-  Wallet
+import {
+  Home,
+  Activity,
+  CreditCard,
+  Send,
+  Target,
+  Bot,
+  Settings,
+  LogOut,
+  Receipt,
+  PlusCircle,
 } from 'lucide-react';
 import { User } from '@/lib/api';
 
@@ -21,6 +22,21 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
+const primaryNav = [
+  { id: 'home', label: 'Home', icon: Home },
+  { id: 'activity', label: 'Activity', icon: Activity },
+  { id: 'cards', label: 'Cards', icon: CreditCard },
+  { id: 'transfers', label: 'Transfers', icon: Send },
+  { id: 'goals', label: 'Goals', icon: Target },
+  { id: 'ai', label: 'AI Assistant', icon: Bot },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
+
+const toolsNav = [
+  { id: 'add', label: 'Add Money', icon: PlusCircle },
+  { id: 'scan', label: 'Scan Receipt', icon: Receipt },
+];
+
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
@@ -29,102 +45,100 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
 }) => {
-  const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'activity', label: 'Activity', icon: Activity },
-    { id: 'add', label: 'Add Money', icon: PlusCircle },
-    { id: 'scan', label: 'Scan Receipt', icon: Receipt },
-    { id: 'ai', label: 'AI Assistant', icon: Bot, badge: 'Gemma' },
-    { id: 'settings', label: 'Settings', icon: Settings },
-  ];
-
   const handleSelect = (id: string) => {
     setCurrentTab(id);
-    if (onCloseMobile) onCloseMobile();
+    onCloseMobile?.();
+  };
+
+  const renderItem = (item: { id: string; label: string; icon: typeof Home }) => {
+    const Icon = item.icon;
+    const isActive = currentTab === item.id;
+    return (
+      <button
+        key={item.id}
+        onClick={() => handleSelect(item.id)}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-control text-[13px] font-semibold transition-colors ${
+          isActive
+            ? 'bg-greenActive text-ink-primary'
+            : 'text-ink-secondary hover:bg-cardHover hover:text-ink-primary'
+        }`}
+      >
+        <span
+          className={`w-0.5 h-4 rounded-full ${isActive ? 'bg-lime' : 'bg-transparent'}`}
+          aria-hidden
+        />
+        <Icon className={`w-4 h-4 ${isActive ? 'text-lime' : 'text-ink-muted'}`} />
+        <span className="truncate">{item.label}</span>
+      </button>
+    );
   };
 
   return (
-    <aside
-      className={`fixed inset-y-0 left-0 z-40 w-64 bg-forest text-white flex flex-col justify-between transition-transform duration-200 ease-in-out md:translate-x-0 ${
-        isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
-      }`}
-    >
-      <div>
-        {/* Brand */}
-        <div className="p-6 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-control bg-lime flex items-center justify-center text-forest font-bold text-xl shadow-md">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
-                MoneyMirror <span className="text-lime text-xs px-1.5 py-0.5 rounded bg-lime/20 border border-lime/30">AI</span>
-              </h1>
-              <p className="text-xs text-white/60">Personal Finance</p>
-            </div>
+    <>
+      {isOpenMobile && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onCloseMobile}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-[188px] bg-sidebar border-r border-borderSubtle flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 ${
+          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="h-[64px] px-5 border-b border-borderSubtle flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-control bg-greenDeep border border-borderSubtle flex items-center justify-center text-lime font-black">
+            K
+          </div>
+          <div>
+            <p className="font-extrabold text-[15px] tracking-[0.18em] text-ink-primary leading-none">
+              KHAZI
+            </p>
+            <p className="text-[10px] text-ink-muted mt-0.5">Finance workspace</p>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-1.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelect(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-control text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-lime text-forest shadow-sm'
-                    : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-forest' : 'text-white/70'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {item.badge && (
-                  <span
-                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                      isActive ? 'bg-forest/20 text-forest' : 'bg-lime/20 text-lime border border-lime/30'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-5">
+          <div>
+            <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-muted">
+              Menu
+            </p>
+            <div className="space-y-0.5">{primaryNav.map(renderItem)}</div>
+          </div>
+          <div>
+            <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-muted">
+              Record
+            </p>
+            <div className="space-y-0.5">{toolsNav.map(renderItem)}</div>
+          </div>
         </nav>
-      </div>
 
-      {/* User profile / Logout */}
-      <div className="p-4 border-t border-white/10 bg-forest-deep/60">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-full bg-lime/20 text-lime border border-lime/30 flex items-center justify-center text-sm font-bold flex-shrink-0">
-              {user ? (user.full_name?.[0] || user.email[0]).toUpperCase() : 'U'}
+        <div className="p-3 border-t border-borderSubtle">
+          <div className="p-2.5 rounded-control bg-cardRaised border border-borderSubtle flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-greenDeep text-lime border border-borderSubtle flex items-center justify-center text-xs font-bold shrink-0">
+              {user ? (user.full_name?.[0] || user.email[0]).toUpperCase() : 'K'}
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium text-white truncate">
-                {user?.full_name || user?.email || 'Guest User'}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-ink-primary truncate">
+                {user?.full_name || user?.email || 'Guest'}
               </p>
-              <p className="text-xs text-white/50 truncate">
-                {user?.preferred_currency || 'MAD'} Account
+              <p className="text-[10px] text-ink-muted truncate">
+                {user?.preferred_currency || 'MAD'}
               </p>
             </div>
+            <button
+              onClick={onLogout}
+              title="Log out"
+              aria-label="Log out"
+              className="p-1.5 rounded-control text-ink-muted hover:text-danger hover:bg-cardHover"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            onClick={onLogout}
-            title="Log out"
-            className="p-2 rounded-control text-white/60 hover:text-danger hover:bg-white/10 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };
-

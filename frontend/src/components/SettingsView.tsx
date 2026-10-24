@@ -14,6 +14,7 @@ import {
   AlertCircle,
   LogOut,
   Save,
+  Loader2
 } from 'lucide-react';
 
 interface Props {
@@ -122,321 +123,245 @@ export default function SettingsView({
   const emojiPresets = ['🍔', '🛒', '🚕', '💡', '🏠', '🎬', '💊', '✈️', '💼', '📈', '🎁', '🎓'];
 
   return (
-    <div className="space-y-8 animate-fade-in pb-16">
-      {/* Title */}
+    <div className="space-y-6 max-w-4xl mx-auto pb-16">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-extrabold text-ink tracking-tight">
-          Settings & Preferences
-        </h1>
-        <p className="text-sm text-inkMuted mt-1">
-          Manage your account profile, custom categories, and AI system capabilities.
+        <h2 className="text-xl sm:text-2xl font-black text-ink-primary tracking-tight">Settings & Preferences</h2>
+        <p className="text-xs text-ink-muted">
+          Manage your account profile, custom categories, and AI infrastructure
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column (Profile & AI Status) */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Profile Card */}
-          <div className="bg-surface rounded-3xl p-6 border border-borderSubtle shadow-card space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center">
-                <UserIcon className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-ink">User Profile</h3>
-                <p className="text-xs text-inkMuted">{user?.email}</p>
-              </div>
+      {/* Profile & Currency Form */}
+      <div className="rounded-card bg-panel border border-borderSubtle p-6 shadow-card space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-borderSubtle">
+          <UserIcon className="w-4 h-4 text-lime" />
+          <h3 className="text-sm font-bold text-ink-primary">Account Profile</h3>
+        </div>
+
+        <form onSubmit={handleUpdateProfile} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-ink-muted mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                disabled
+                value={user?.email || ''}
+                className="w-full bg-app/50 border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-muted cursor-not-allowed"
+              />
             </div>
 
-            {profileMessage && (
-              <div
-                className={`p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
-                  profileMessage.type === 'success'
-                    ? 'bg-lime/20 text-forest border border-lime/40'
-                    : 'bg-danger/10 text-danger border border-danger/20'
-                }`}
+            <div>
+              <label className="block text-xs font-semibold text-ink-muted mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-muted mb-1">
+                Default Currency
+              </label>
+              <select
+                value={preferredCurrency}
+                onChange={(e) => setPreferredCurrency(e.target.value)}
+                className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60 cursor-pointer"
               >
-                {profileMessage.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                )}
-                <span>{profileMessage.text}</span>
-              </div>
-            )}
+                {['MAD', 'USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AED', 'SAR'].map((curr) => (
+                  <option key={curr} value={curr}>
+                    {curr}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-inkMuted mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-borderSubtle bg-surfaceAlt text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest font-medium"
-                />
-              </div>
+          {profileMessage && (
+            <div
+              className={`p-3 rounded-control text-xs flex items-center gap-2 ${
+                profileMessage.type === 'success'
+                  ? 'bg-success/15 border border-success/40 text-success'
+                  : 'bg-danger/15 border border-danger/40 text-danger'
+              }`}
+            >
+              {profileMessage.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              <span>{profileMessage.text}</span>
+            </div>
+          )}
 
-              <div>
-                <label className="block text-xs font-semibold text-inkMuted mb-1">
-                  Preferred Currency
-                </label>
-                <select
-                  value={preferredCurrency}
-                  onChange={(e) => setPreferredCurrency(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-borderSubtle bg-surfaceAlt text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest font-medium"
-                >
-                  <option value="MAD">MAD (Moroccan Dirham)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-              </div>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={savingProfile}
+              className="px-5 py-2 rounded-control text-xs font-bold bg-lime text-app hover:bg-lime-hover disabled:opacity-50 transition-all flex items-center gap-1.5 shadow-glow"
+            >
+              {savingProfile ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
 
+      {/* Category Manager */}
+      <div className="rounded-card bg-panel border border-borderSubtle p-6 shadow-card space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-borderSubtle">
+          <Tag className="w-4 h-4 text-lime" />
+          <h3 className="text-sm font-bold text-ink-primary">Custom Categories</h3>
+        </div>
+
+        {/* Add Category Form */}
+        <form onSubmit={handleAddCategory} className="p-4 rounded-control bg-cardRaised border border-borderSubtle space-y-3">
+          <p className="text-xs font-semibold text-ink-primary">Add New Category</p>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div className="sm:col-span-6">
+              <input
+                type="text"
+                placeholder="Category name (e.g. Subscriptions)"
+                value={catName}
+                onChange={(e) => setCatName(e.target.value)}
+                className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary placeholder:text-ink-muted focus:outline-none focus:border-lime/60"
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <select
+                value={catKind}
+                onChange={(e) => setCatKind(e.target.value as 'expense' | 'income')}
+                className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60 cursor-pointer"
+              >
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
+            <div className="sm:col-span-3">
               <button
                 type="submit"
-                disabled={savingProfile}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-forest text-white hover:bg-forest/90 transition-all shadow-sm disabled:opacity-50"
+                disabled={addingCategory || !catName.trim()}
+                className="w-full py-2 rounded-control text-xs font-bold bg-lime text-app hover:bg-lime-hover disabled:opacity-40 transition-all flex items-center justify-center gap-1.5 shadow-glow"
               >
-                <Save className="w-4 h-4" />
-                {savingProfile ? 'Saving...' : 'Save Profile'}
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Add Category</span>
               </button>
-            </form>
+            </div>
+          </div>
 
-            <div className="pt-4 border-t border-borderSubtle">
+          {/* Quick emoji presets */}
+          <div className="flex items-center gap-2 overflow-x-auto pt-1">
+            <span className="text-[10px] text-ink-muted">Icon:</span>
+            {emojiPresets.map((em) => (
               <button
-                onClick={onLogout}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-danger hover:bg-danger/10 transition-colors"
+                key={em}
+                type="button"
+                onClick={() => setCatIcon(em)}
+                className={`p-1 text-sm rounded hover:bg-cardHover ${catIcon === em ? 'bg-greenActive border border-borderSubtle' : ''}`}
               >
-                <LogOut className="w-3.5 h-3.5" />
-                Sign Out
+                {em}
               </button>
-            </div>
+            ))}
           </div>
 
-          {/* AI & Security Status */}
-          <div className="bg-surface rounded-3xl p-6 border border-borderSubtle shadow-card space-y-4">
-            <div className="flex items-center gap-2 text-forest font-bold text-sm">
-              <Cpu className="w-4 h-4" />
-              <span>AI Engine Architecture</span>
-            </div>
+          {catError && <p className="text-xs text-danger">{catError}</p>}
+        </form>
 
-            <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-surfaceAlt border border-borderSubtle/50">
-                <span className="text-inkMuted">LLM Assistant:</span>
-                <span className="font-semibold text-ink">
-                  {aiStatus?.gemma_model || 'Gemma 3 (27B IT)'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-surfaceAlt border border-borderSubtle/50">
-                <span className="text-inkMuted">Vector Embeddings:</span>
-                <span className="font-semibold text-forest">
-                  {aiStatus?.embeddings_enabled ? 'FastEmbed BGE-small' : 'Active'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-surfaceAlt border border-borderSubtle/50">
-                <span className="text-inkMuted">OCR Engine:</span>
-                <span className="font-semibold text-forest">
-                  {aiStatus?.ocr_enabled ? 'RapidOCR (PP-OCRv4)' : 'Disabled'}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-forest/5 border border-forest/15 flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-forest shrink-0 mt-0.5" />
-              <p className="text-[11px] text-ink leading-relaxed">
-                <strong>Read-Only Guard:</strong> AI Chatbot executes queries under isolated read-only
-                Postgres sessions. Transaction writing is strictly forbidden in conversational flows.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (Category Management) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-surface rounded-3xl p-6 border border-borderSubtle shadow-card space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-ink flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-forest" />
-                  Category Management
-                </h3>
-                <p className="text-xs text-inkMuted mt-0.5">
-                  Customize and organize spending & income categories.
-                </p>
-              </div>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-surfaceAlt border border-borderSubtle text-inkMuted">
-                {categories.length} Total
-              </span>
-            </div>
-
-            {/* Add Category Form */}
-            <form
-              onSubmit={handleAddCategory}
-              className="p-4 rounded-2xl bg-surfaceAlt border border-borderSubtle space-y-3"
+        {/* Existing Categories List */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 pt-2">
+          {categories.map((c) => (
+            <div
+              key={c.id}
+              className="p-2.5 rounded-control bg-cardRaised border border-borderSubtle flex items-center justify-between group hover:border-lime/30 transition-colors"
             >
-              <div className="text-xs font-bold text-ink uppercase tracking-wider">
-                Create New Category
+              <div className="flex items-center gap-2 overflow-hidden">
+                <span className="text-base flex-shrink-0">{c.icon || '📁'}</span>
+                <div className="overflow-hidden">
+                  <p className="text-xs font-semibold text-ink-primary truncate">{c.name}</p>
+                  <p className="text-[9px] uppercase font-mono text-ink-muted">{c.kind}</p>
+                </div>
               </div>
 
-              {catError && (
-                <div className="text-xs text-danger bg-danger/10 p-2 rounded-lg border border-danger/20">
-                  {catError}
-                </div>
+              {!c.is_default && (
+                <button
+                  onClick={() => handleDeleteCategory(c.id)}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-ink-muted hover:text-danger transition-opacity"
+                  title="Delete category"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-inkMuted mb-1">
-                    Icon
-                  </label>
-                  <input
-                    type="text"
-                    value={catIcon}
-                    onChange={(e) => setCatIcon(e.target.value)}
-                    maxLength={4}
-                    className="w-full text-center py-2 rounded-xl border border-borderSubtle bg-surface text-ink text-base focus:outline-none focus:ring-2 focus:ring-forest"
-                  />
-                </div>
-
-                <div className="sm:col-span-5">
-                  <label className="block text-[11px] font-semibold text-inkMuted mb-1">
-                    Category Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Freelance, Gym, Pets"
-                    value={catName}
-                    onChange={(e) => setCatName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-borderSubtle bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-semibold text-inkMuted mb-1">
-                    Kind
-                  </label>
-                  <select
-                    value={catKind}
-                    onChange={(e) => setCatKind(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-borderSubtle bg-surface text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest font-medium"
-                  >
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                  </select>
-                </div>
-
-                <div className="sm:col-span-2 flex items-end">
-                  <button
-                    type="submit"
-                    disabled={addingCategory || !catName.trim()}
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-semibold bg-forest text-white hover:bg-forest/90 transition-colors disabled:opacity-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Emoji quick presets */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {emojiPresets.map((em) => (
-                  <button
-                    key={em}
-                    type="button"
-                    onClick={() => setCatIcon(em)}
-                    className="text-base p-1.5 rounded-lg bg-surface border border-borderSubtle/60 hover:bg-lime/20 hover:border-forest transition-colors"
-                  >
-                    {em}
-                  </button>
-                ))}
-              </div>
-            </form>
-
-            {/* Category Lists */}
-            <div className="space-y-6">
-              {/* Expense Categories */}
-              <div>
-                <h4 className="text-xs font-bold text-ink uppercase tracking-wider mb-3">
-                  Expense Categories (
-                  {categories.filter((c) => c.kind === 'expense').length})
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {categories
-                    .filter((c) => c.kind === 'expense')
-                    .map((cat) => (
-                      <div
-                        key={cat.id}
-                        className="flex items-center justify-between p-3 rounded-2xl bg-surfaceAlt border border-borderSubtle/60 text-sm"
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <span className="text-base">{cat.icon || '📁'}</span>
-                          <span className="font-semibold text-ink truncate">
-                            {cat.name}
-                          </span>
-                        </div>
-                        {cat.is_default ? (
-                          <span className="text-[10px] text-inkMuted uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface border border-borderSubtle shrink-0">
-                            Default
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleDeleteCategory(cat.id)}
-                            className="p-1 rounded-lg text-inkMuted hover:text-danger hover:bg-danger/10 transition-colors shrink-0"
-                            title="Delete category"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Income Categories */}
-              <div>
-                <h4 className="text-xs font-bold text-ink uppercase tracking-wider mb-3">
-                  Income Categories (
-                  {categories.filter((c) => c.kind === 'income').length})
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {categories
-                    .filter((c) => c.kind === 'income')
-                    .map((cat) => (
-                      <div
-                        key={cat.id}
-                        className="flex items-center justify-between p-3 rounded-2xl bg-surfaceAlt border border-borderSubtle/60 text-sm"
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <span className="text-base">{cat.icon || '💰'}</span>
-                          <span className="font-semibold text-ink truncate">
-                            {cat.name}
-                          </span>
-                        </div>
-                        {cat.is_default ? (
-                          <span className="text-[10px] text-inkMuted uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface border border-borderSubtle shrink-0">
-                            Default
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleDeleteCategory(cat.id)}
-                            className="p-1 rounded-lg text-inkMuted hover:text-danger hover:bg-danger/10 transition-colors shrink-0"
-                            title="Delete category"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI & System Health Status */}
+      <div className="rounded-card bg-panel border border-borderSubtle p-6 shadow-card space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-borderSubtle">
+          <Cpu className="w-4 h-4 text-lime" />
+          <h3 className="text-sm font-bold text-ink-primary">AI & Vector Infrastructure</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3.5 rounded-control bg-cardRaised border border-borderSubtle space-y-1">
+            <span className="text-[10px] uppercase font-mono text-ink-muted">LLM Reasoning</span>
+            <p className="text-xs font-bold text-ink-primary flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${aiStatus?.gemma_configured ? 'bg-success' : 'bg-danger'}`} />
+              {aiStatus?.gemma_model || 'Gemma 3'}
+            </p>
+            <p className="text-[10px] text-ink-muted">Zero-mutation read sandbox</p>
+          </div>
+
+          <div className="p-3.5 rounded-control bg-cardRaised border border-borderSubtle space-y-1">
+            <span className="text-[10px] uppercase font-mono text-ink-muted">Vector Search</span>
+            <p className="text-xs font-bold text-ink-primary flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-success" />
+              bge-small-en-v1.5
+            </p>
+            <p className="text-[10px] text-ink-muted">FastEmbed + PostgreSQL pgvector</p>
+          </div>
+
+          <div className="p-3.5 rounded-control bg-cardRaised border border-borderSubtle space-y-1">
+            <span className="text-[10px] uppercase font-mono text-ink-muted">Vision OCR</span>
+            <p className="text-xs font-bold text-ink-primary flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-success" />
+              RapidOCR & Vision Engine
+            </p>
+            <p className="text-[10px] text-ink-muted">Mandatory human review guardrail</p>
           </div>
         </div>
+      </div>
+
+      {/* Logout Action */}
+      <div className="rounded-card bg-panel border border-borderSubtle p-6 shadow-card flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold text-ink-primary">Log Out of KHAZI</p>
+          <p className="text-xs text-ink-muted">Terminates session on this browser device</p>
+        </div>
+        <button
+          onClick={onLogout}
+          className="px-4 py-2 rounded-control text-xs font-bold bg-danger/15 text-danger border border-danger/30 hover:bg-danger hover:text-white transition-all flex items-center gap-2"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Log Out</span>
+        </button>
       </div>
     </div>
   );
 }
-

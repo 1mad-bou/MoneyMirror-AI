@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { 
-  ArrowDownLeft, 
-  ArrowUpRight, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2 
+import React, { useEffect, useState } from 'react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Building,
+  Receipt,
+  ChevronRight,
 } from 'lucide-react';
 import { Category, TransactionCreatePayload, api } from '@/lib/api';
 
@@ -13,16 +16,23 @@ interface AddMoneyViewProps {
   categories: Category[];
   preferredCurrency: string;
   onSuccess: () => void;
+  initialType?: 'income' | 'expense';
+  onScanReceipt?: () => void;
 }
+
+const PRESETS = ['10', '25', '50', '100', '200'];
 
 export const AddMoneyView: React.FC<AddMoneyViewProps> = ({
   categories,
   preferredCurrency,
   onSuccess,
+  initialType = 'income',
+  onScanReceipt,
 }) => {
-  const [type, setType] = useState<'income' | 'expense'>('income');
-  const [amount, setAmount] = useState<string>('50.00');
-  const [customAmount, setCustomAmount] = useState<string>('50.00');
+  const [type, setType] = useState<'income' | 'expense'>(initialType);
+  const [amount, setAmount] = useState<string>('50');
+  const [customAmount, setCustomAmount] = useState<string>('50');
+  const [isCustom, setIsCustom] = useState(false);
   const [currency, setCurrency] = useState<string>(preferredCurrency);
   const [description, setDescription] = useState<string>('');
   const [merchant, setMerchant] = useState<string>('');
@@ -30,28 +40,29 @@ export const AddMoneyView: React.FC<AddMoneyViewProps> = ({
   const [transactionDate, setTransactionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-
-  // Natural Language Tab
-  const [isAiMode, setIsAiMode] = useState<boolean>(false);
-  const [nlText, setNlText] = useState<string>('');
-  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const [selectedMethod, setSelectedMethod] = useState<string>('manual');
+  const [isAiMode, setIsAiMode] = useState(false);
+  const [nlText, setNlText] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-
-  // Submission state
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
 
-  const presets = ['10', '25', '50', '100', '200', '500'];
+  useEffect(() => {
+    setType(initialType);
+  }, [initialType]);
 
-  const handlePresetClick = (p: string) => {
-    setAmount(p);
-    setCustomAmount(p);
-  };
-
-  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
+  const applyAmount = (val: string, custom: boolean) => {
+    setIsCustom(custom);
     setCustomAmount(val);
     setAmount(val);
+    const parsed = parseFloat(val);
+    if (val && (isNaN(parsed) || parsed <= 0)) {
+      setAmountError('Amount must be greater than 0.');
+    } else {
+      setAmountError(null);
+    }
   };
 
   const handleNlExtract = async () => {
@@ -60,24 +71,20 @@ export const AddMoneyView: React.FC<AddMoneyViewProps> = ({
     setAiError(null);
     try {
       const draft = await api.getNLDraft(nlText);
-      if (draft.amount) {
-        setAmount(draft.amount);
-        setCustomAmount(draft.amount);
-      }
+      if (draft.amount) applyAmount(draft.amount, true);
       if (draft.currency) setCurrency(draft.currency);
       if (draft.type) setType(draft.type);
       if (draft.description) setDescription(draft.description);
       if (draft.merchant) setMerchant(draft.merchant);
       if (draft.transaction_date) setTransactionDate(draft.transaction_date);
       if (draft.suggested_category_id) setCategoryId(draft.suggested_category_id);
-
       setIsAiMode(false);
       setStatusMessage({
         type: 'success',
-        text: 'Draft extracted! Please review the details below before saving.',
+        text: 'Draft parsed. Review the amount and source before recording.',
       });
     } catch (err: any) {
-      setAiError(err.message || 'Failed to extract draft. Please enter manually.');
+      setAiError(err.message || 'Failed to extract draft. Use manual entry.');
     } finally {
       setIsAiLoading(false);
     }
@@ -87,33 +94,31 @@ export const AddMoneyView: React.FC<AddMoneyViewProps> = ({
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setStatusMessage({ type: 'error', text: 'Please enter a valid amount greater than 0.' });
+      setAmountError('Enter a valid amount greater than 0.');
+      setStatusMessage({ type: 'error', text: 'Enter a valid amount greater than 0.' });
       return;
     }
 
     setIsSubmitting(true);
     setStatusMessage(null);
-
-    // Generate unique idempotency key to prevent accidental double-submits
-    const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const idempotencyKey = `add-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     try {
       const payload: TransactionCreatePayload = {
         type,
         amount: parsedAmount.toFixed(2),
         currency: currency.toUpperCase(),
-        description: description.trim() || (type === 'income' ? 'Deposit' : 'Expense'),
+        description:
+          description.trim() ||
+          (type === 'income' ? 'Deposit' : 'Withdrawal'),
         merchant: merchant.trim() || undefined,
         category_id: categoryId ? Number(categoryId) : undefined,
         transaction_date: transactionDate,
-        source: isAiMode ? 'natural_language' : 'manual',
+        source: 'manual',
       };
-
       await api.createTransaction(payload, idempotencyKey);
-      setStatusMessage({ type: 'success', text: 'Transaction recorded successfully!' });
-      setTimeout(() => {
-        onSuccess();
-      }, 700);
+      setStatusMessage({ type: 'success', text: 'Recorded after confirmation.' });
+      setTimeout(onSuccess, 700);
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: err.message || 'Failed to record transaction.' });
     } finally {
@@ -124,189 +129,238 @@ export const AddMoneyView: React.FC<AddMoneyViewProps> = ({
   const filteredCategories = categories.filter((c) => c.kind === type);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="text-center sm:text-left">
-        <h2 className="text-xl sm:text-2xl font-bold text-ink">
-          {type === 'income' ? 'Add Money / Deposit' : 'Record Expense'}
+    <div className="max-w-xl mx-auto space-y-6 pb-12">
+      <div>
+        <h2 className="text-2xl font-bold text-ink-primary tracking-tight">
+          {type === 'income' ? 'Add Money' : 'Withdraw'}
         </h2>
-        <p className="text-xs sm:text-sm text-ink-muted">
-          Manual preset entry or describe with natural language
+        <p className="text-xs text-ink-muted mt-1">
+          This records a ledger entry. Timing depends on when you confirm — it does not move funds at a bank.
         </p>
       </div>
 
-      {/* Mode Switch: Presets vs Natural Language AI */}
-      <div className="flex rounded-control bg-surface border border-borderSubtle p-1 shadow-sm">
+      <div className="flex rounded-control bg-panel border border-borderSubtle p-1">
         <button
           type="button"
           onClick={() => setIsAiMode(false)}
-          className={`flex-1 py-2 text-xs font-bold rounded-control transition-colors ${
-            !isAiMode ? 'bg-forest text-white' : 'text-ink-muted hover:text-ink'
-          }`}
+          className={`flex-1 py-2 text-xs font-bold rounded-control ${!isAiMode ? 'bg-greenActive text-ink-primary' : 'text-ink-muted'}`}
         >
-          Preset & Manual Form
+          Amount & method
         </button>
         <button
           type="button"
           onClick={() => setIsAiMode(true)}
-          className={`flex-1 py-2 text-xs font-bold rounded-control flex items-center justify-center gap-1.5 transition-colors ${
-            isAiMode ? 'bg-forest text-white' : 'text-ink-muted hover:text-ink'
-          }`}
+          className={`flex-1 py-2 text-xs font-bold rounded-control flex items-center justify-center gap-1.5 ${isAiMode ? 'bg-greenActive text-ink-primary' : 'text-ink-muted'}`}
         >
           <Sparkles className="w-3.5 h-3.5 text-lime" />
-          <span>Describe with AI</span>
+          Describe with AI
         </button>
       </div>
 
-      {/* Natural Language Prompt Card */}
       {isAiMode && (
-        <div className="p-6 rounded-card bg-surface border border-borderSubtle shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-ink flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-forest" />
-              Describe Your Transaction
-            </h3>
-            <p className="text-xs text-ink-muted">
-              Type naturally, e.g. &quot;I spent 80 MAD on lunch at McDonalds today&quot; or &quot;Received 4,000 MAD for freelance project&quot;
-            </p>
-          </div>
-
+        <div className="rounded-card bg-panel border border-borderSubtle p-5 space-y-3">
+          <p className="text-xs text-ink-muted">
+            Example: “Received 3000 MAD salary today” or “Spent 45 MAD on groceries”
+          </p>
           <textarea
+            rows={3}
             value={nlText}
             onChange={(e) => setNlText(e.target.value)}
-            rows={3}
-            placeholder="Type your transaction in plain words..."
-            className="w-full p-3 rounded-control text-xs bg-surface-muted border border-borderSubtle text-ink focus:outline-none focus:ring-1 focus:ring-forest"
+            placeholder="Type the transaction in plain language..."
+            className="w-full rounded-control bg-app border border-borderSubtle p-3 text-xs text-ink-primary placeholder:text-ink-muted focus:outline-none focus:border-lime/60"
           />
-
           {aiError && (
-            <div className="p-3 rounded-control bg-danger/10 border border-danger/20 text-danger text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{aiError}</span>
-            </div>
+            <p className="text-xs text-danger flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5" />
+              {aiError}
+            </p>
           )}
-
           <button
             type="button"
-            disabled={isAiLoading || !nlText.trim()}
             onClick={handleNlExtract}
-            className="w-full py-2.5 rounded-control bg-forest text-white text-xs font-bold hover:bg-forest-light disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            disabled={isAiLoading || !nlText.trim()}
+            className="w-full py-2.5 rounded-control text-xs font-bold bg-lime text-app hover:bg-lime-hover disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {isAiLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-lime" />
-                <span>Extracting with Gemma...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-lime" />
-                <span>Generate Draft for Review</span>
-              </>
-            )}
+            {isAiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {isAiLoading ? 'Extracting…' : 'Extract draft'}
           </button>
         </div>
       )}
 
-      {/* Main Review & Confirmation Form */}
-      <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-card bg-surface border border-borderSubtle shadow-sm space-y-6">
-        {/* Type Toggle: Income vs Expense */}
-        <div className="flex items-center gap-3">
+      <form onSubmit={handleSubmit} className="rounded-card bg-panel border border-borderSubtle p-6 space-y-6">
+        <div className="flex items-center justify-center gap-3 pb-2 border-b border-borderSubtle">
           <button
             type="button"
-            onClick={() => {
-              setType('income');
-              setCategoryId('');
-            }}
-            className={`flex-1 py-2.5 px-4 rounded-control text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
-              type === 'income'
-                ? 'bg-mint text-forest border-forest/20 shadow-sm'
-                : 'bg-surface-muted text-ink-muted border-borderSubtle hover:bg-borderSubtle'
+            onClick={() => setType('income')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-control text-xs font-bold ${
+              type === 'income' ? 'bg-greenActive text-ink-primary border border-borderSubtle' : 'text-ink-muted'
             }`}
           >
-            <ArrowDownLeft className="w-4 h-4" />
-            <span>Income (Deposit)</span>
+            <ArrowDownLeft className="w-3.5 h-3.5 text-success" />
+            Add money
           </button>
-
           <button
             type="button"
-            onClick={() => {
-              setType('expense');
-              setCategoryId('');
-            }}
-            className={`flex-1 py-2.5 px-4 rounded-control text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
-              type === 'expense'
-                ? 'bg-forest text-white border-forest shadow-sm'
-                : 'bg-surface-muted text-ink-muted border-borderSubtle hover:bg-borderSubtle'
+            onClick={() => setType('expense')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-control text-xs font-bold ${
+              type === 'expense' ? 'bg-greenActive text-ink-primary border border-borderSubtle' : 'text-ink-muted'
             }`}
           >
-            <ArrowUpRight className="w-4 h-4 text-lime" />
-            <span>Expense (Spend)</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-danger" />
+            Withdraw
           </button>
         </div>
 
-        {/* Amount Section with Presets */}
         <div className="space-y-3">
-          <label className="text-xs font-bold text-ink uppercase tracking-wider block">
-            Select or Enter Amount ({currency})
+          <label className="block text-xs font-bold uppercase tracking-wider text-ink-muted">
+            Amount ({currency})
           </label>
-
-          {/* Presets Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {presets.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => handlePresetClick(p)}
-                className={`py-2 rounded-control text-xs font-bold border transition-colors ${
-                  amount === p
-                    ? 'bg-forest text-white border-forest'
-                    : 'bg-surface-muted text-ink border-borderSubtle hover:bg-borderSubtle'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-
-          {/* Custom Amount & Currency Input */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                required
-                value={customAmount}
-                onChange={handleCustomAmountChange}
-                placeholder="0.00"
-                className="w-full px-4 py-3 text-lg font-mono font-bold rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none focus:ring-1 focus:ring-forest"
-              />
-            </div>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="px-3 py-3 text-xs font-bold rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none cursor-pointer"
+            {PRESETS.map((p) => {
+              const selected = !isCustom && amount === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => applyAmount(p, false)}
+                  className={`py-2 px-3 rounded-control text-xs font-tnum font-bold border ${
+                    selected
+                      ? 'bg-greenDeep text-lime border-lime/70'
+                      : 'bg-cardRaised border-borderSubtle text-ink-secondary hover:border-lime/40'
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => applyAmount(customAmount || '', true)}
+              className={`py-2 px-3 rounded-control text-xs font-bold border ${
+                isCustom
+                  ? 'bg-greenDeep text-lime border-lime/70'
+                  : 'bg-cardRaised border-borderSubtle text-ink-secondary hover:border-lime/40'
+              }`}
             >
-              <option value="MAD">MAD</option>
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-              <option value="GBP">GBP</option>
-              <option value="CAD">CAD</option>
-              <option value="AED">AED</option>
-              <option value="SAR">SAR</option>
-            </select>
+              Custom
+            </button>
           </div>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-lime">{currency}</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={customAmount}
+              onChange={(e) => applyAmount(e.target.value, true)}
+              placeholder="0.00"
+              aria-invalid={Boolean(amountError)}
+              className="w-full bg-app border border-borderSubtle rounded-control pl-16 pr-4 py-3 text-xl font-bold font-tnum text-ink-primary focus:outline-none focus:border-lime/60"
+            />
+          </div>
+          {amountError && <p className="text-xs text-danger">{amountError}</p>}
         </div>
 
-        {/* Form Fields: Category, Date, Merchant, Description */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {type === 'income' && (
+          <div className="space-y-2 pt-2 border-t border-borderSubtle">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-2">Funding source</p>
+            {[
+              {
+                id: 'manual',
+                title: 'Manual record',
+                subtitle: 'Log cash or a deposit you already received',
+                icon: Building,
+              },
+              {
+                id: 'bank',
+                title: 'Bank transfer record',
+                subtitle: 'Note an incoming transfer you already made',
+                icon: Building,
+              },
+            ].map((m) => {
+              const Icon = m.icon;
+              const chosen = selectedMethod === m.id;
+              return (
+                <button
+                  type="button"
+                  key={m.id}
+                  onClick={() => setSelectedMethod(m.id)}
+                  className={`w-full p-3 rounded-control border flex items-center justify-between text-left ${
+                    chosen ? 'bg-cardRaised border-lime/50' : 'bg-app border-borderSubtle hover:bg-cardHover'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-control bg-panel border border-borderSubtle flex items-center justify-center text-lime">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-ink-primary">{m.title}</p>
+                      <p className="text-[10px] text-ink-muted">{m.subtitle}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-ink-muted" />
+                </button>
+              );
+            })}
+            {onScanReceipt && (
+              <button
+                type="button"
+                onClick={onScanReceipt}
+                className="w-full p-3 rounded-control border border-borderSubtle bg-app hover:bg-cardHover flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-control bg-panel border border-borderSubtle flex items-center justify-center text-lime">
+                    <Receipt className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-ink-primary">Scan a receipt</p>
+                    <p className="text-[10px] text-ink-muted">OCR draft with review before saving</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-ink-muted" />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-borderSubtle">
           <div>
-            <label className="text-xs font-semibold text-ink-muted mb-1 block">Category</label>
+            <label className="block text-[11px] font-semibold text-ink-muted mb-1" htmlFor="desc">
+              Description
+            </label>
+            <input
+              id="desc"
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={type === 'income' ? 'Salary, transfer…' : 'Withdrawal, bill…'}
+              className="khazi-input"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-ink-muted mb-1" htmlFor="merchant">
+              Merchant / source
+            </label>
+            <input
+              id="merchant"
+              type="text"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              placeholder="Optional"
+              className="khazi-input"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-ink-muted mb-1" htmlFor="cat">
+              Category
+            </label>
             <select
+              id="cat"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none cursor-pointer"
+              className="khazi-input"
             >
-              <option value="">Select a category</option>
+              <option value="">Select category</option>
               {filteredCategories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -314,81 +368,40 @@ export const AddMoneyView: React.FC<AddMoneyViewProps> = ({
               ))}
             </select>
           </div>
-
           <div>
-            <label className="text-xs font-semibold text-ink-muted mb-1 block">Date</label>
+            <label className="block text-[11px] font-semibold text-ink-muted mb-1" htmlFor="date">
+              Date
+            </label>
             <input
+              id="date"
               type="date"
-              required
               value={transactionDate}
               onChange={(e) => setTransactionDate(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none font-mono"
-            >
-            </input>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-ink-muted mb-1 block">
-              Merchant / Counterparty (optional)
-            </label>
-            <input
-              type="text"
-              value={merchant}
-              onChange={(e) => setMerchant(e.target.value)}
-              placeholder="e.g. Starbucks, Carrefour, Employer"
-              className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-ink-muted mb-1 block">
-              Description / Notes
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Weekly groceries or coffee"
-              className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
+              className="khazi-input"
             />
           </div>
         </div>
 
-        {/* Status Alert */}
         {statusMessage && (
           <div
             className={`p-3 rounded-control text-xs flex items-center gap-2 ${
               statusMessage.type === 'success'
-                ? 'bg-mint text-forest border border-forest/10'
-                : 'bg-danger/10 text-danger border border-danger/20'
+                ? 'bg-success/15 border border-success/40 text-success'
+                : 'bg-danger/15 border border-danger/40 text-danger'
             }`}
           >
-            {statusMessage.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            )}
-            <span>{statusMessage.text}</span>
+            {statusMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {statusMessage.text}
           </div>
         )}
 
-        {/* Primary Action Button */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 rounded-control bg-forest text-white text-sm font-bold hover:bg-forest-light disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+          className="w-full py-3 rounded-control text-xs font-bold uppercase tracking-wider bg-lime text-app hover:bg-lime-hover disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin text-lime" />
-              <span>Recording Transaction...</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-4 h-4 text-lime" />
-              <span>Confirm & Save {amount} {currency}</span>
-            </>
-          )}
+          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+          {isSubmitting ? 'Recording…' : type === 'income' ? 'Add Money' : 'Record withdrawal'}
         </button>
       </form>
     </div>

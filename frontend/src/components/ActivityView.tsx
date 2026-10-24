@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
-import { 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Search, 
-  Filter, 
-  Trash2, 
-  Edit3, 
-  ChevronLeft, 
+import React from 'react';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  Search,
+  Trash2,
+  Edit3,
+  ChevronLeft,
   ChevronRight,
-  TrendingUp,
-  TrendingDown
 } from 'lucide-react';
 import { Category, Transaction, TrendPoint } from '@/lib/api';
 
@@ -34,6 +31,13 @@ interface ActivityViewProps {
   onDeleteTransaction: (id: number) => void;
 }
 
+const PERIODS = [
+  { id: '7d', label: 'Week' },
+  { id: '30d', label: 'Month' },
+  { id: '90d', label: 'Quarter' },
+  { id: 'year', label: 'Year' },
+];
+
 export const ActivityView: React.FC<ActivityViewProps> = ({
   transactions,
   totalTransactions,
@@ -54,21 +58,17 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
   onOpenTransactionDetail,
   onDeleteTransaction,
 }) => {
-  // Compute period totals from trends
   const periodIncome = trends.reduce((sum, p) => sum + parseFloat(p.income || '0'), 0);
   const periodExpenses = trends.reduce((sum, p) => sum + parseFloat(p.expenses || '0'), 0);
-  const periodNet = periodIncome - periodExpenses;
 
-  // Simple SVG Line Chart generator
   const maxVal = Math.max(
     ...trends.map((t) => Math.max(parseFloat(t.income || '0'), parseFloat(t.expenses || '0'))),
-    100
+    1
   );
 
-  const chartHeight = 160;
-  const chartWidth = 700;
-  const padding = 20;
-
+  const chartHeight = 180;
+  const chartWidth = 720;
+  const padding = 24;
   const pointsCount = Math.max(trends.length, 2);
   const stepX = (chartWidth - padding * 2) / (pointsCount - 1);
 
@@ -82,32 +82,47 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
   const incomePoints = trends.map((t, i) => getCoordinates(t.income, i)).join(' ');
   const expensePoints = trends.map((t, i) => getCoordinates(t.expenses, i)).join(' ');
 
+  const categorySpendingMap = new Map<string, { name: string; amount: number; count: number }>();
+  transactions
+    .filter((t) => t.type === 'expense')
+    .forEach((t) => {
+      const name = t.category?.name || 'Uncategorized';
+      const existing = categorySpendingMap.get(name) || { name, amount: 0, count: 0 };
+      existing.amount += parseFloat(t.amount || '0');
+      existing.count += 1;
+      categorySpendingMap.set(name, existing);
+    });
+
+  const categorySpendingList = Array.from(categorySpendingMap.values())
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
+  const totalExpensePage = categorySpendingList.reduce((acc, c) => acc + c.amount, 0) || 1;
+
+  const visibleTransactions =
+    typeFilter === 'transfer'
+      ? transactions.filter(
+          (t) =>
+            t.source === 'manual' &&
+            (t.description?.toLowerCase().includes('transfer') || false)
+        )
+      : transactions;
+
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto">
-      {/* Top Header & Period Selector */}
+    <div className="space-y-6 max-w-[1440px] mx-auto pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-ink">Your Activity</h2>
-          <p className="text-xs sm:text-sm text-ink-muted">
-            Financial analytics and complete transaction history
-          </p>
+          <h2 className="text-xl sm:text-2xl font-bold text-ink-primary tracking-tight">Your Activity</h2>
+          <p className="text-xs text-ink-muted">Cash-flow comparison, categories, and transaction history</p>
         </div>
-
-        {/* Period Selector Tabs */}
-        <div className="inline-flex p-1 rounded-control bg-surface border border-borderSubtle shadow-sm">
-          {[
-            { id: '7d', label: '7D' },
-            { id: '30d', label: '30D' },
-            { id: '90d', label: '90D' },
-            { id: 'year', label: 'Year' },
-          ].map((item) => (
+        <div className="inline-flex p-1 rounded-control bg-panel border border-borderSubtle self-start">
+          {PERIODS.map((item) => (
             <button
               key={item.id}
               onClick={() => onPeriodChange(item.id)}
-              className={`px-3.5 py-1.5 rounded-control text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-control text-xs font-bold ${
                 period === item.id
-                  ? 'bg-forest text-white shadow-sm'
-                  : 'text-ink-muted hover:text-ink'
+                  ? 'bg-greenActive text-ink-primary'
+                  : 'text-ink-muted hover:text-ink-primary'
               }`}
             >
               {item.label}
@@ -116,266 +131,237 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
         </div>
       </div>
 
-      {/* Analytics: Chart + Metric Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cash Flow Line Chart */}
-        <div className="lg:col-span-2 rounded-card bg-surface p-6 border border-borderSubtle shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 rounded-card bg-panel border border-borderSubtle p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
             <div>
-              <h3 className="text-sm font-bold text-ink uppercase tracking-wider">
-                Income vs Expenses Flow
-              </h3>
-              <p className="text-xs text-ink-muted">Daily trend for selected period ({selectedCurrency})</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Total Spend</p>
+              <p className="text-2xl sm:text-3xl font-black text-ink-primary font-tnum mt-1">
+                {periodExpenses.toFixed(2)}{' '}
+                <span className="text-xs font-semibold text-lime">{selectedCurrency}</span>
+              </p>
+              <p className="text-[11px] text-ink-muted mt-1">
+                Income in this window: {periodIncome.toFixed(2)} {selectedCurrency}
+              </p>
             </div>
-            {/* Legend */}
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-forest" />
-                <span className="font-semibold text-ink">Income</span>
+                <span className="w-5 h-0.5 bg-lime rounded" />
+                <span className="text-ink-secondary">This period (expenses)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-lime border border-forest/10" />
-                <span className="font-semibold text-ink">Expenses</span>
+                <span className="w-5 border-t border-dashed border-mint" />
+                <span className="text-ink-secondary">This period (income)</span>
               </div>
             </div>
           </div>
 
-          {/* SVG Chart */}
           <div className="w-full overflow-x-auto py-2">
-            <svg
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-              className="w-full h-44 overflow-visible"
-            >
-              {/* Gridlines */}
-              <line
-                x1={padding}
-                y1={padding}
-                x2={chartWidth - padding}
-                y2={padding}
-                stroke="#E3E5DE"
-                strokeDasharray="4 4"
-              />
-              <line
-                x1={padding}
-                y1={chartHeight / 2}
-                x2={chartWidth - padding}
-                y2={chartHeight / 2}
-                stroke="#E3E5DE"
-                strokeDasharray="4 4"
-              />
-              <line
-                x1={padding}
-                y1={chartHeight - padding}
-                x2={chartWidth - padding}
-                y2={chartHeight - padding}
-                stroke="#E3E5DE"
-              />
-
-              {/* Expense line (Lime) */}
-              {expensePoints && (
-                <polyline
-                  fill="none"
-                  stroke="#B8E83D"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={expensePoints}
-                />
-              )}
-
-              {/* Income line (Dark forest) */}
-              {incomePoints && (
-                <polyline
-                  fill="none"
-                  stroke="#14270B"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={incomePoints}
-                />
-              )}
-            </svg>
+            {trends.length === 0 ? (
+              <p className="h-44 flex items-center justify-center text-xs text-ink-muted">
+                No trend points for this period yet.
+              </p>
+            ) : (
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-44" role="img" aria-label="Cash flow over time">
+                <title>Expenses versus income across the selected period</title>
+                {[padding, chartHeight / 2, chartHeight - padding].map((y) => (
+                  <line key={y} x1={padding} y1={y} x2={chartWidth - padding} y2={y} stroke="#1D2B20" strokeDasharray="4 4" />
+                ))}
+                {expensePoints && (
+                  <polyline fill="none" stroke="#C7F451" strokeWidth="3" strokeLinecap="round" points={expensePoints} />
+                )}
+                {incomePoints && (
+                  <polyline fill="none" stroke="#87E5CB" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" points={incomePoints} />
+                )}
+              </svg>
+            )}
           </div>
-
-          <div className="flex justify-between text-[11px] text-ink-muted pt-2 border-t border-borderSubtle">
+          <div className="flex justify-between text-[10px] font-tnum text-ink-muted pt-2 border-t border-borderSubtle">
             <span>{trends[0]?.date || 'Start'}</span>
             <span>{trends[Math.floor(trends.length / 2)]?.date || 'Mid'}</span>
             <span>{trends[trends.length - 1]?.date || 'End'}</span>
           </div>
         </div>
 
-        {/* Period Summary Metric Cards */}
-        <div className="space-y-4 flex flex-col justify-between">
-          <div className="rounded-card bg-surface p-6 border border-borderSubtle shadow-sm flex-1 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-ink-muted">Total Received</span>
-              <div className="w-8 h-8 rounded-full bg-mint text-forest flex items-center justify-center">
-                <ArrowDownLeft className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-forest font-mono">
-              +{periodIncome.toFixed(2)} {selectedCurrency}
-            </p>
-            <p className="text-xs text-ink-muted mt-1">Recorded for {period.toUpperCase()}</p>
+        <div className="lg:col-span-4 rounded-card bg-panel border border-borderSubtle p-5 sm:p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-muted">Categories</h3>
+            <span className="text-[10px] font-tnum text-lime font-bold">From this page</span>
           </div>
-
-          <div className="rounded-card bg-surface p-6 border border-borderSubtle shadow-sm flex-1 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-ink-muted">Total Spent</span>
-              <div className="w-8 h-8 rounded-full bg-surface-muted text-danger flex items-center justify-center">
-                <ArrowUpRight className="w-4 h-4" />
-              </div>
+          {categorySpendingList.length === 0 ? (
+            <p className="py-12 text-center text-xs text-ink-muted">No expense categories in the current filter.</p>
+          ) : (
+            <div className="space-y-4">
+              {categorySpendingList.map((c, idx) => {
+                const pct = Math.round((c.amount / totalExpensePage) * 100);
+                return (
+                  <div key={c.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs gap-2">
+                      <span className="font-semibold text-ink-primary truncate">{c.name}</span>
+                      <span className="font-tnum font-bold text-ink-secondary shrink-0">
+                        {pct}% · {c.amount.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-cardRaised rounded-full h-1.5 overflow-hidden border border-borderSubtle/60">
+                      <div
+                        className={`h-full rounded-full ${idx === 0 ? 'bg-lime' : 'bg-greenActive'}`}
+                        style={{ width: `${Math.max(4, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-ink font-mono">
-              -{periodExpenses.toFixed(2)} {selectedCurrency}
-            </p>
-            <p className="text-xs text-ink-muted mt-1">
-              Net cash flow: <span className={periodNet >= 0 ? 'text-forest font-bold' : 'text-danger font-bold'}>
-                {periodNet >= 0 ? '+' : ''}{periodNet.toFixed(2)} {selectedCurrency}
-              </span>
-            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2 pt-4 border-t border-borderSubtle mt-auto">
+            <div className="p-2.5 rounded-control bg-cardRaised border border-borderSubtle">
+              <p className="text-[10px] text-ink-muted uppercase">Inflow</p>
+              <p className="text-xs font-bold text-success font-tnum">+{periodIncome.toFixed(2)}</p>
+            </div>
+            <div className="p-2.5 rounded-control bg-cardRaised border border-borderSubtle">
+              <p className="text-[10px] text-ink-muted uppercase">Outflow</p>
+              <p className="text-xs font-bold text-danger font-tnum">-{periodExpenses.toFixed(2)}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Transaction History Filter Bar & Table */}
-      <div className="rounded-card bg-surface p-6 border border-borderSubtle shadow-sm space-y-4">
+      <div className="rounded-card bg-panel border border-borderSubtle p-5 sm:p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-ink">Transaction History</h3>
-            <p className="text-xs text-ink-muted">{totalTransactions} transactions found</p>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-ink-muted">Transaction History</h3>
+            <p className="text-xs text-ink-secondary">{totalTransactions} transactions found</p>
           </div>
-
-          {/* Filter Controls */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Search Input */}
             <div className="relative">
-              <Search className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="text"
+                type="search"
+                placeholder="Search description..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search descriptions, merchants..."
-                className="pl-9 pr-3 py-1.5 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none focus:ring-1 focus:ring-forest w-48 sm:w-60"
+                className="bg-cardRaised border border-borderSubtle rounded-control pl-8 pr-3 py-1.5 text-xs text-ink-primary placeholder:text-ink-muted focus:outline-none focus:border-lime/50 w-40 sm:w-56"
               />
             </div>
-
-            {/* Type Filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => onTypeFilterChange(e.target.value)}
-              className="px-2.5 py-1.5 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none cursor-pointer"
-            >
-              <option value="">All Types</option>
-              <option value="expense">Expenses Only</option>
-              <option value="income">Income Only</option>
-            </select>
-
-            {/* Category Filter */}
+            <div className="inline-flex rounded-control bg-cardRaised border border-borderSubtle p-0.5">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'income', label: 'Income' },
+                { id: 'expense', label: 'Expense' },
+                { id: 'transfer', label: 'Transfer' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => onTypeFilterChange(t.id)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-control ${
+                    typeFilter === t.id ? 'bg-greenActive text-ink-primary' : 'text-ink-muted hover:text-ink-primary'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <select
               value={categoryFilter}
               onChange={(e) => onCategoryFilterChange(e.target.value)}
-              className="px-2.5 py-1.5 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none cursor-pointer"
+              aria-label="Filter by category"
+              className="bg-cardRaised border border-borderSubtle rounded-control px-2.5 py-1.5 text-xs text-ink-secondary focus:outline-none focus:border-lime/50"
             >
-              <option value="">All Categories</option>
+              <option value="all">All Categories</option>
               {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.kind})
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-borderSubtle text-ink-muted font-semibold">
-                <th className="py-3 px-3">Transaction</th>
-                <th className="py-3 px-3">Category</th>
-                <th className="py-3 px-3">Date</th>
-                <th className="py-3 px-3">Source</th>
-                <th className="py-3 px-3 text-right">Amount</th>
-                <th className="py-3 px-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borderSubtle">
-              {transactions.length > 0 ? (
-                transactions.map((tx) => {
-                  const isExpense = tx.type === 'expense';
-                  return (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-surface-muted/40 transition-colors group cursor-pointer"
-                      onClick={() => onOpenTransactionDetail(tx)}
-                    >
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                              isExpense ? 'bg-surface-muted text-danger' : 'bg-mint text-forest'
-                            }`}
-                          >
-                            {isExpense ? (
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                            ) : (
-                              <ArrowDownLeft className="w-3.5 h-3.5" />
-                            )}
+        {visibleTransactions.length === 0 ? (
+          <p className="py-16 text-center text-xs text-ink-muted">No transactions match these filters.</p>
+        ) : (
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-borderSubtle text-[11px] font-bold uppercase tracking-wider text-ink-muted">
+                    <th className="py-3 px-3">Date</th>
+                    <th className="py-3 px-3">Description</th>
+                    <th className="py-3 px-3">Category</th>
+                    <th className="py-3 px-3 text-right">Amount</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borderSubtle/60 text-xs">
+                  {visibleTransactions.map((tx) => {
+                    const isExpense = tx.type === 'expense';
+                    return (
+                      <tr
+                        key={tx.id}
+                        className="hover:bg-cardHover/70 cursor-pointer"
+                        onClick={() => onOpenTransactionDetail(tx)}
+                      >
+                        <td className="py-3 px-3 font-tnum text-ink-muted whitespace-nowrap">{tx.transaction_date}</td>
+                        <td className="py-3 px-3 font-semibold text-ink-primary">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isExpense ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}`}>
+                              {isExpense ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                            </div>
+                            <span className="truncate max-w-xs">{tx.merchant || tx.description || 'Transaction'}</span>
                           </div>
-                          <div>
-                            <p className="font-semibold text-ink">
-                              {tx.merchant || tx.description || 'Transaction'}
-                            </p>
-                            {tx.merchant && tx.description && (
-                              <p className="text-[10px] text-ink-muted truncate max-w-[200px]">
-                                {tx.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-full bg-surface-muted font-medium text-ink">
-                          {tx.category?.name || 'Uncategorized'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-ink-muted font-mono">{tx.transaction_date}</td>
-                      <td className="py-3 px-3">
-                        <span className="text-[10px] font-medium text-ink-muted capitalize">
-                          {tx.source}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono font-bold">
-                        <span className={isExpense ? 'text-ink' : 'text-forest font-extrabold'}>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex text-[11px] px-2 py-0.5 rounded-full bg-cardRaised border border-borderSubtle text-ink-secondary">
+                            {tx.category?.name || 'Uncategorized'}
+                          </span>
+                        </td>
+                        <td className={`py-3 px-3 text-right font-tnum font-bold ${isExpense ? 'text-danger' : 'text-success'}`}>
                           {isExpense ? '-' : '+'}
                           {tx.amount} {tx.currency}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => onDeleteTransaction(tx.id)}
-                          className="p-1 rounded hover:bg-danger/10 text-ink-muted hover:text-danger transition-colors"
-                          title="Delete transaction"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center text-ink-muted">
-                    No transactions match the selected filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                        </td>
+                        <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => onOpenTransactionDetail(tx)} aria-label="Edit" className="p-1 rounded text-ink-muted hover:text-ink-primary">
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => onDeleteTransaction(tx.id)} aria-label="Delete" className="p-1 rounded text-ink-muted hover:text-danger">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Pagination */}
+            <div className="md:hidden space-y-2">
+              {visibleTransactions.map((tx) => {
+                const isExpense = tx.type === 'expense';
+                return (
+                  <button
+                    key={tx.id}
+                    onClick={() => onOpenTransactionDetail(tx)}
+                    className="w-full text-left p-3 rounded-control bg-cardRaised border border-borderSubtle"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-ink-primary">{tx.merchant || tx.description || 'Transaction'}</p>
+                        <p className="text-[11px] text-ink-muted mt-0.5">
+                          {tx.transaction_date} · {tx.category?.name || 'Uncategorized'} · {isExpense ? 'Expense' : 'Income'}
+                        </p>
+                      </div>
+                      <p className={`text-sm font-tnum font-bold ${isExpense ? 'text-danger' : 'text-success'}`}>
+                        {isExpense ? '-' : '+'}
+                        {tx.amount}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4 border-t border-borderSubtle text-xs text-ink-muted">
             <span>
@@ -383,16 +369,18 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
             </span>
             <div className="flex items-center gap-2">
               <button
-                disabled={currentPage <= 1}
                 onClick={() => onPageChange(currentPage - 1)}
-                className="p-1.5 rounded-control border border-borderSubtle bg-surface hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={currentPage <= 1}
+                aria-label="Previous page"
+                className="p-1.5 rounded-control bg-cardRaised border border-borderSubtle hover:bg-cardHover disabled:opacity-40"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                disabled={currentPage >= totalPages}
                 onClick={() => onPageChange(currentPage + 1)}
-                className="p-1.5 rounded-control border border-borderSubtle bg-surface hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={currentPage >= totalPages}
+                aria-label="Next page"
+                className="p-1.5 rounded-control bg-cardRaised border border-borderSubtle hover:bg-cardHover disabled:opacity-40"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -403,4 +391,3 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
     </div>
   );
 };
-

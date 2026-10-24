@@ -8,7 +8,8 @@ import {
   X, 
   Loader2, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 import { Category, ReceiptDraft, TransactionCreatePayload, api } from '@/lib/api';
 
@@ -118,17 +119,23 @@ export const ReceiptScanView: React.FC<ReceiptScanViewProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center sm:text-left">
-        <h2 className="text-xl sm:text-2xl font-bold text-ink">Receipt Scanner</h2>
-        <p className="text-xs sm:text-sm text-ink-muted">
-          OCR text extraction with mandatory human review before saving
-        </p>
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-ink-primary tracking-tight">Receipt Scanner</h2>
+          <p className="text-xs text-ink-muted">
+            OCR vision extraction with human-in-the-loop verification
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cardRaised border border-borderSubtle text-lime text-xs font-semibold self-start sm:self-auto">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Draft Review Required</span>
+        </div>
       </div>
 
       {!draft ? (
         /* Upload Step */
-        <div className="rounded-card bg-surface p-8 border border-borderSubtle shadow-sm space-y-6 text-center">
+        <div className="rounded-card bg-panel p-8 border border-borderSubtle shadow-card space-y-6 text-center">
           <input
             type="file"
             ref={fileInputRef}
@@ -140,27 +147,27 @@ export const ReceiptScanView: React.FC<ReceiptScanViewProps> = ({
           {!previewUrl ? (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-borderSubtle hover:border-forest/40 rounded-card p-10 cursor-pointer transition-colors bg-surface-muted/30 flex flex-col items-center justify-center space-y-3"
+              className="border-2 border-dashed border-borderSubtle hover:border-lime/50 rounded-card p-10 cursor-pointer transition-colors bg-cardRaised/40 flex flex-col items-center justify-center space-y-3 group"
             >
-              <div className="w-14 h-14 rounded-full bg-mint text-forest flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-greenDeep text-lime border border-borderSubtle flex items-center justify-center group-hover:scale-105 transition-transform shadow-glow">
                 <UploadCloud className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-sm font-bold text-ink">Click to upload receipt image</p>
+                <p className="text-sm font-bold text-ink-primary">Click to upload receipt image</p>
                 <p className="text-xs text-ink-muted mt-1">Supports JPG, PNG, and WebP up to 8MB</p>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="relative inline-block max-h-72 rounded-control overflow-hidden border border-borderSubtle shadow-sm">
+              <div className="relative inline-block max-h-72 rounded-control overflow-hidden border border-borderSubtle shadow-card">
                 <img
                   src={previewUrl}
                   alt="Receipt Preview"
-                  className="max-h-72 object-contain"
+                  className="max-h-72 object-contain bg-black"
                 />
                 <button
                   onClick={handleDiscard}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-forest/80 text-white hover:bg-forest transition-colors"
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-panel/80 text-ink-primary hover:bg-panel border border-borderSubtle transition-colors"
                   title="Remove image"
                 >
                   <X className="w-4 h-4" />
@@ -171,7 +178,7 @@ export const ReceiptScanView: React.FC<ReceiptScanViewProps> = ({
                 <button
                   type="button"
                   onClick={handleDiscard}
-                  className="px-4 py-2 rounded-control text-xs font-semibold bg-surface-muted border border-borderSubtle text-ink hover:bg-borderSubtle transition-colors"
+                  className="px-4 py-2 rounded-control text-xs font-semibold bg-cardRaised border border-borderSubtle text-ink-secondary hover:text-ink-primary hover:bg-cardHover transition-colors"
                 >
                   Cancel
                 </button>
@@ -179,16 +186,16 @@ export const ReceiptScanView: React.FC<ReceiptScanViewProps> = ({
                   type="button"
                   disabled={isScanning}
                   onClick={handleStartScan}
-                  className="px-6 py-2 rounded-control text-xs font-bold bg-forest text-white hover:bg-forest-light disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm"
+                  className="px-6 py-2 rounded-control text-xs font-bold bg-lime text-app hover:bg-lime-hover disabled:opacity-50 transition-all flex items-center gap-2 shadow-glow"
                 >
                   {isScanning ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-lime" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Extracting with OCR...</span>
                     </>
                   ) : (
                     <>
-                      <Receipt className="w-4 h-4 text-lime" />
+                      <Receipt className="w-4 h-4" />
                       <span>Extract Receipt Data</span>
                     </>
                   )}
@@ -198,7 +205,7 @@ export const ReceiptScanView: React.FC<ReceiptScanViewProps> = ({
           )}
 
           {scanError && (
-            <div className="p-3 rounded-control bg-danger/10 border border-danger/20 text-danger text-xs flex items-center justify-center gap-2">
+            <div className="p-3 rounded-control bg-danger/15 border border-danger/40 text-danger text-xs flex items-center justify-center gap-2">
               <AlertCircle className="w-4 h-4" />
               <span>{scanError}</span>
             </div>
@@ -208,172 +215,192 @@ export const ReceiptScanView: React.FC<ReceiptScanViewProps> = ({
         /* Review Step: Mandatory Human Review */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Image Preview & Confidence Column */}
-          <div className="rounded-card bg-surface p-6 border border-borderSubtle shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-ink">Receipt Image</h3>
+          <div className="rounded-card bg-panel p-6 border border-borderSubtle shadow-card space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-muted">Receipt Image</h3>
             {previewUrl && (
-              <div className="rounded-control overflow-hidden border border-borderSubtle max-h-64 flex items-center justify-center bg-black/5">
+              <div className="rounded-control overflow-hidden border border-borderSubtle max-h-64 flex items-center justify-center bg-black/40">
                 <img src={previewUrl} alt="Receipt preview" className="max-h-64 object-contain" />
               </div>
             )}
 
             <div className="space-y-2 pt-2 border-t border-borderSubtle">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-ink-muted">Confidence Score:</span>
-                <span className="font-bold text-forest">{Math.round(draft.confidence * 100)}%</span>
+                <span className="text-ink-muted">Confidence Score</span>
+                <span className="font-mono font-bold text-lime">
+                  {Math.round((draft.confidence || 0.85) * 100)}%
+                </span>
               </div>
-              <div className="w-full bg-surface-muted rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-lime h-full rounded-full"
-                  style={{ width: `${Math.round(draft.confidence * 100)}%` }}
-                />
-              </div>
+              {draft.warnings && draft.warnings.length > 0 && (
+                <div className="p-2.5 rounded-control bg-cardRaised border border-borderSubtle text-[11px] text-ink-secondary space-y-1">
+                  <div className="font-semibold text-lime flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>OCR Note</span>
+                  </div>
+                  {draft.warnings.map((w, idx) => (
+                    <p key={idx}>{w}</p>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {draft.warnings.length > 0 && (
-              <div className="p-3 rounded-control bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  Review Notes:
-                </p>
-                <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
-                  {draft.warnings.map((w, i) => (
-                    <li key={i}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={handleDiscard}
+              className="w-full py-2 rounded-control text-xs font-semibold bg-cardRaised border border-borderSubtle text-ink-muted hover:text-ink-primary hover:bg-cardHover transition-colors"
+            >
+              Scan Another Receipt
+            </button>
           </div>
 
-          {/* Editable Form Column */}
-          <form
-            onSubmit={handleConfirmAndSave}
-            className="md:col-span-2 rounded-card bg-surface p-6 sm:p-8 border border-borderSubtle shadow-sm space-y-5"
-          >
-            <div className="border-b border-borderSubtle pb-3">
-              <h3 className="text-base font-bold text-ink">Review & Edit Extracted Fields</h3>
-              <p className="text-xs text-ink-muted">
-                Please verify all values. Nothing is saved until you click Confirm.
-              </p>
+          {/* Review & Edit Form */}
+          <div className="md:col-span-2 rounded-card bg-panel p-6 border border-borderSubtle shadow-card">
+            <div className="flex items-center justify-between pb-3 border-b border-borderSubtle mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-ink-primary">Review Extracted Draft</h3>
+                <p className="text-[11px] text-ink-muted">
+                  Inspect and adjust figures before committing to database
+                </p>
+              </div>
+              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-greenActive text-lime font-bold">
+                Transient Draft
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-ink-muted mb-1 block">Merchant</label>
-                <input
-                  type="text"
-                  required
-                  value={merchant}
-                  onChange={(e) => setMerchant(e.target.value)}
-                  placeholder="Store or merchant name"
-                  className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-ink-muted mb-1 block">Total Amount</label>
-                <div className="flex gap-2">
+            <form onSubmit={handleConfirmAndSave} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-semibold text-ink-muted mb-1">
+                    Merchant Name *
+                  </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    type="text"
                     required
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 text-xs font-mono font-bold rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
+                    value={merchant}
+                    onChange={(e) => setMerchant(e.target.value)}
+                    className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-ink-muted mb-1">
+                    Total Amount *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-lime font-mono">
+                      {currency}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full bg-app border border-borderSubtle rounded-control pl-14 pr-3 py-2 text-xs font-bold font-mono text-ink-primary focus:outline-none focus:border-lime/60"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-ink-muted mb-1">
+                    Transaction Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={transactionDate}
+                    onChange={(e) => setTransactionDate(e.target.value)}
+                    className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-ink-muted mb-1">
+                    Category
+                  </label>
                   <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="px-2 py-2 text-xs font-bold rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
+                    className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60 cursor-pointer"
                   >
-                    <option value="MAD">MAD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                    <option value="GBP">GBP</option>
+                    <option value="">Select Category...</option>
+                    {categories
+                      .filter((c) => c.kind === 'expense')
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-ink-muted mb-1 block">Date</label>
-                <input
-                  type="date"
-                  required
-                  value={transactionDate}
-                  onChange={(e) => setTransactionDate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-ink-muted mb-1 block">Category</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none cursor-pointer"
-                >
-                  <option value="">Select a category</option>
-                  {categories
-                    .filter((c) => c.kind === 'expense')
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-ink-muted mb-1 block">Description</label>
+                <label className="block text-[11px] font-semibold text-ink-muted mb-1">
+                  Description / Note
+                </label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Receipt description"
-                  className="w-full px-3 py-2 text-xs rounded-control bg-surface-muted border border-borderSubtle text-ink focus:outline-none"
+                  className="w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-lime/60"
                 />
               </div>
-            </div>
 
-            {submitError && (
-              <div className="p-3 rounded-control bg-danger/10 border border-danger/20 text-danger text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{submitError}</span>
+              {/* Extracted line items if detected */}
+              {draft.items && draft.items.length > 0 && (
+                <div className="pt-2 border-t border-borderSubtle">
+                  <p className="text-[11px] font-semibold text-ink-muted mb-2">Detected Line Items</p>
+                  <div className="max-h-36 overflow-y-auto space-y-1 rounded-control bg-app p-2 border border-borderSubtle">
+                    {draft.items.map((item, i) => (
+                      <div key={i} className="flex justify-between text-[11px] text-ink-secondary py-0.5">
+                        <span className="truncate pr-2">{item.description}</span>
+                        <span className="font-mono text-ink-primary font-bold">
+                          {item.amount ? `${item.amount} ${currency}` : '-'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {submitError && (
+                <div className="p-3 rounded-control bg-danger/15 border border-danger/40 text-danger text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{submitError}</span>
+                </div>
+              )}
+
+              <div className="pt-4 border-t border-borderSubtle flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleDiscard}
+                  className="px-4 py-2 rounded-control text-xs font-semibold bg-cardRaised border border-borderSubtle text-ink-secondary hover:text-ink-primary hover:bg-cardHover transition-colors"
+                >
+                  Discard Draft
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 rounded-control text-xs font-bold bg-lime text-app hover:bg-lime-hover disabled:opacity-50 transition-all flex items-center gap-2 shadow-glow"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Transaction...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Confirm & Save</span>
+                    </>
+                  )}
+                </button>
               </div>
-            )}
-
-            {/* Actions: Confirm and Save vs Discard */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-borderSubtle">
-              <button
-                type="button"
-                onClick={handleDiscard}
-                className="px-4 py-2 rounded-control text-xs font-semibold bg-surface-muted border border-borderSubtle text-ink hover:bg-borderSubtle transition-colors"
-              >
-                Discard Receipt
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2 rounded-control text-xs font-bold bg-forest text-white hover:bg-forest-light disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-lime" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-lime" />
-                    <span>Confirm & Persist Transaction</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
 };
-

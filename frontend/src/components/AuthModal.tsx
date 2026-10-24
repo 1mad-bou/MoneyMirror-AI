@@ -10,7 +10,7 @@ interface Props {
   onClose?: () => void;
 }
 
-export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
+export default function AuthModal({ isOpen, onAuthenticated }: Props) {
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,14 +53,12 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
     const demoPassword = 'moneymirror-demo-password-123';
 
     try {
-      // First try to login
       try {
         const res = await api.login({ email: demoEmail, password: demoPassword });
         setToken(res.access_token);
         onAuthenticated(res.user);
         return;
-      } catch (e) {
-        // If login failed, try to register
+      } catch {
         const res = await api.register({
           email: demoEmail,
           password: demoPassword,
@@ -70,72 +68,49 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
         onAuthenticated(res.user);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to auto-sign in demo account');
+      setError(err.message || 'Failed to sign in to the demo account');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-      <div
-        className="w-full max-w-md bg-surface rounded-3xl border border-borderSubtle shadow-2xl p-6 sm:p-8 space-y-6 animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Brand Header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+      <div className="w-full max-w-md bg-panel rounded-hero border border-borderSubtle shadow-card p-6 sm:p-8 space-y-6">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-forest text-lime shadow-md mb-2">
-            <span className="font-extrabold text-2xl tracking-tight">M</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-control bg-greenDeep text-lime border border-borderSubtle mb-2 font-black text-xl">
+            K
           </div>
-          <h2 className="text-2xl font-extrabold text-ink tracking-tight">
-            MoneyMirror AI
-          </h2>
-          <p className="text-xs text-inkMuted">
-            Autonomous Financial Intelligence & Multimodal Receipt Extraction
-          </p>
+          <h2 className="text-2xl font-extrabold text-ink-primary tracking-[0.14em]">KHAZI</h2>
+          <p className="text-xs text-ink-muted">Dark forest-green finance workspace</p>
         </div>
 
-        {/* 1-Click Demo Button */}
-        <div className="p-3.5 rounded-2xl bg-forest/5 border border-forest/15 space-y-2">
+        <div className="p-3.5 rounded-card bg-greenDeep/40 border border-borderSubtle space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-forest flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-forest" /> Quick Evaluator Access
-            </span>
-            <span className="text-[10px] uppercase font-semibold tracking-wider text-inkMuted">
-              No setup required
+            <span className="text-xs font-bold text-lime flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> Quick access
             </span>
           </div>
           <button
             type="button"
             onClick={handleDemoLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-forest text-lime font-bold text-xs hover:bg-forest/90 transition-all shadow-sm active:scale-[0.99] disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-control bg-lime text-app font-bold text-xs hover:bg-lime-hover disabled:opacity-50"
           >
-            <span>Launch with 1-Click Demo Account</span>
+            Launch demo account
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="relative flex items-center justify-center text-xs text-inkMuted">
-          <div className="border-t border-borderSubtle w-full" />
-          <span className="bg-surface px-3 uppercase tracking-wider text-[10px] font-semibold">
-            Or Use Account
-          </span>
-          <div className="border-t border-borderSubtle w-full" />
-        </div>
-
-        {/* Tab switcher */}
-        <div className="flex p-1 bg-surfaceAlt rounded-2xl border border-borderSubtle">
+        <div className="flex p-1 bg-cardRaised rounded-control border border-borderSubtle">
           <button
             type="button"
             onClick={() => {
               setTab('login');
               setError(null);
             }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'login'
-                ? 'bg-surface text-ink shadow-sm'
-                : 'text-inkMuted hover:text-ink'
+            className={`flex-1 py-2 text-xs font-bold rounded-control ${
+              tab === 'login' ? 'bg-greenActive text-ink-primary' : 'text-ink-muted'
             }`}
           >
             Sign In
@@ -146,10 +121,8 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
               setTab('register');
               setError(null);
             }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'register'
-                ? 'bg-surface text-ink shadow-sm'
-                : 'text-inkMuted hover:text-ink'
+            className={`flex-1 py-2 text-xs font-bold rounded-control ${
+              tab === 'register' ? 'bg-greenActive text-ink-primary' : 'text-ink-muted'
             }`}
           >
             Create Account
@@ -157,7 +130,7 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium flex items-center gap-2">
+          <div className="p-3 rounded-control bg-danger/15 border border-danger/30 text-danger text-xs font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -166,53 +139,56 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {tab === 'register' && (
             <div>
-              <label className="block text-xs font-semibold text-inkMuted mb-1">
+              <label className="block text-xs font-semibold text-ink-muted mb-1" htmlFor="full-name">
                 Full Name
               </label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-inkMuted absolute left-3 top-3" />
+                <UserIcon className="w-4 h-4 text-ink-muted absolute left-3 top-3" />
                 <input
+                  id="full-name"
                   type="text"
-                  placeholder="e.g. Alex Hunter"
+                  placeholder="Your name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-borderSubtle bg-surfaceAlt text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+                  className="w-full pl-9 pr-3 py-2 rounded-control border border-borderSubtle bg-app text-ink-primary text-sm focus:outline-none focus:border-lime/60"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-inkMuted mb-1">
+            <label className="block text-xs font-semibold text-ink-muted mb-1" htmlFor="email">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-inkMuted absolute left-3 top-3" />
+              <Mail className="w-4 h-4 text-ink-muted absolute left-3 top-3" />
               <input
+                id="email"
                 type="email"
                 required
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-borderSubtle bg-surfaceAlt text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+                className="w-full pl-9 pr-3 py-2 rounded-control border border-borderSubtle bg-app text-ink-primary text-sm focus:outline-none focus:border-lime/60"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-inkMuted mb-1">
+            <label className="block text-xs font-semibold text-ink-muted mb-1" htmlFor="password">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-inkMuted absolute left-3 top-3" />
+              <Lock className="w-4 h-4 text-ink-muted absolute left-3 top-3" />
               <input
+                id="password"
                 type="password"
                 required
                 minLength={6}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-borderSubtle bg-surfaceAlt text-ink text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+                className="w-full pl-9 pr-3 py-2 rounded-control border border-borderSubtle bg-app text-ink-primary text-sm focus:outline-none focus:border-lime/60"
               />
             </div>
           </div>
@@ -220,7 +196,7 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-forest text-white font-bold text-sm hover:bg-forest/90 transition-all shadow-sm active:scale-[0.99] disabled:opacity-50"
+            className="w-full py-2.5 rounded-control bg-lime text-app font-bold text-sm hover:bg-lime-hover disabled:opacity-50"
           >
             {loading ? 'Please wait...' : tab === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -229,4 +205,3 @@ export default function AuthModal({ isOpen, onAuthenticated, onClose }: Props) {
     </div>
   );
 }
-

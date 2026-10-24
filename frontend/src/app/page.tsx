@@ -17,6 +17,9 @@ import { ActivityView } from '@/components/ActivityView';
 import { AddMoneyView } from '@/components/AddMoneyView';
 import { ReceiptScanView } from '@/components/ReceiptScanView';
 import { AIAssistantView } from '@/components/AIAssistantView';
+import { CardsView } from '@/components/CardsView';
+import { TransfersView } from '@/components/TransfersView';
+import { GoalsView } from '@/components/GoalsView';
 import SettingsView from '@/components/SettingsView';
 import AuthModal from '@/components/AuthModal';
 import TransactionDetailModal from '@/components/TransactionDetailModal';
@@ -42,6 +45,8 @@ export default function App() {
   const [trends, setTrends] = useState<TrendPoint[]>([]);
   const [period, setPeriod] = useState<string>('30d');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [globalSearch, setGlobalSearch] = useState<string>('');
+  const [addMoneyType, setAddMoneyType] = useState<'income' | 'expense'>('income');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -89,7 +94,7 @@ export default function App() {
             size: 10,
             currency: curr,
             search: search || undefined,
-            type: type !== 'all' ? type : undefined,
+            type: type !== 'all' && type !== 'transfer' ? type : undefined,
             category_id: catId !== 'all' ? Number(catId) : undefined,
           }),
           api.getTrends(curr, pPeriod),
@@ -215,46 +220,61 @@ export default function App() {
       case 'home':
         return {
           title: `Welcome back, ${user?.full_name?.split(' ')[0] || 'Member'}`,
-          subtitle: "Here's what happened with your money mirror today.",
+          subtitle: 'Balance, actions, and your financial copilot.',
         };
       case 'activity':
         return {
-          title: 'Financial Activity',
-          subtitle: 'Audit, filter, and inspect your financial transactions.',
+          title: 'Your Activity',
+          subtitle: 'Cash-flow analytics and transaction history.',
         };
       case 'add':
         return {
-          title: 'Add Money & Record',
-          subtitle: 'Log income, expenses, or describe transactions naturally.',
+          title: addMoneyType === 'expense' ? 'Withdraw' : 'Add Money',
+          subtitle: 'Choose an amount and record the source.',
         };
       case 'scan':
         return {
           title: 'Receipt Scanner',
-          subtitle: 'Optical character extraction with human review guardrails.',
+          subtitle: 'Extract a draft, then confirm before it is saved.',
         };
       case 'ai':
         return {
-          title: 'AI Financial Assistant',
-          subtitle: 'Ask questions about your finances backed by Gemma 3 & FastEmbed.',
+          title: 'KHAZI AI',
+          subtitle: 'Read-only questions about your recorded finances.',
         };
+      case 'cards':
+        return { title: 'Cards', subtitle: 'Linked payment methods, when available.' };
+      case 'transfers':
+        return { title: 'Transfers', subtitle: 'Record an outgoing transfer on your ledger.' };
+      case 'goals':
+        return { title: 'Goals', subtitle: 'Savings targets when the product stores them.' };
       case 'settings':
         return {
-          title: 'Settings & Preferences',
-          subtitle: 'Manage your currency, categories, and account configuration.',
+          title: 'Settings',
+          subtitle: 'Profile, categories, and preferences.',
         };
       default:
-        return { title: 'MoneyMirror AI' };
+        return { title: 'KHAZI' };
     }
+  };
+
+  const handleNavigate = (
+    tab: string,
+    options?: { moneyType?: 'income' | 'expense'; recipient?: string }
+  ) => {
+    if (options?.moneyType) setAddMoneyType(options.moneyType);
+    if (tab === 'add' && !options?.moneyType) setAddMoneyType('income');
+    setCurrentTab(tab);
   };
 
   if (loadingInitial) {
     return (
-      <div className="min-h-screen bg-page flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-forest text-lime flex items-center justify-center font-extrabold text-2xl shadow-xl animate-bounce">
-          M
+      <div className="min-h-screen bg-app bg-glow-radial flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-control bg-greenDeep text-lime border border-borderSubtle flex items-center justify-center font-extrabold text-2xl">
+          K
         </div>
-        <p className="text-sm font-semibold text-inkMuted tracking-wider uppercase">
-          Initializing MoneyMirror AI...
+        <p className="text-sm font-semibold text-ink-muted tracking-wider uppercase">
+          Loading KHAZI...
         </p>
       </div>
     );
@@ -263,8 +283,7 @@ export default function App() {
   const { title, subtitle } = getPageTitle();
 
   return (
-    <div className="min-h-screen bg-page text-ink flex antialiased selection:bg-lime selection:text-forest">
-      {/* Sidebar Navigation */}
+    <div className="min-h-screen bg-app text-ink-primary flex bg-glow-radial">
       <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
@@ -274,15 +293,21 @@ export default function App() {
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 md:pl-64">
-        {/* Top Header */}
+      <div className="flex-1 flex flex-col min-w-0 md:pl-[188px]">
         <TopBar
           title={title}
           subtitle={subtitle}
           user={user}
           onOpenMobileMenu={() => setMobileSidebarOpen(true)}
           onQuickAction={(action) => setCurrentTab(action)}
+          searchQuery={globalSearch}
+          onSearchChange={setGlobalSearch}
+          onSearchSubmit={(q) => {
+            setSearchQuery(q);
+            setCurrentPage(1);
+            setCurrentTab('activity');
+          }}
+          onLogout={handleLogout}
         />
 
         {/* View Content */}
@@ -291,7 +316,7 @@ export default function App() {
             <HomeView
               summary={summary}
               recentTransactions={recentTransactions}
-              onNavigate={(tab) => setCurrentTab(tab)}
+              onNavigate={handleNavigate}
               onOpenTransactionDetail={(tx) => setSelectedTx(tx)}
               onSelectCurrency={(c) => setSelectedCurrency(c)}
               selectedCurrency={selectedCurrency}
@@ -334,12 +359,28 @@ export default function App() {
             <AddMoneyView
               categories={categories}
               preferredCurrency={selectedCurrency}
+              initialType={addMoneyType}
+              onScanReceipt={() => setCurrentTab('scan')}
               onSuccess={() => {
                 refreshCurrentView();
                 setCurrentTab('activity');
               }}
             />
           )}
+
+          {currentTab === 'cards' && <CardsView />}
+
+          {currentTab === 'transfers' && (
+            <TransfersView
+              preferredCurrency={selectedCurrency}
+              onSuccess={() => {
+                refreshCurrentView();
+                setCurrentTab('activity');
+              }}
+            />
+          )}
+
+          {currentTab === 'goals' && <GoalsView />}
 
           {currentTab === 'scan' && (
             <ReceiptScanView

@@ -3,22 +3,49 @@
 @tailwind utilities;
 
 :root {
-  --color-page: #F2F3EE;
-  --color-forest: #14270B;
-  --color-lime: #B8E83D;
-  --color-mint: #D8ECEA;
-  --color-ink: #171A15;
-  --color-text-muted: #74786F;
+  --bg-app: #06100B;
+  --bg-sidebar: #08110D;
+  --bg-panel: #0B1510;
+  --bg-card-raised: #101B14;
+  --bg-card-hover: #17251A;
+  --green-deep: #14280F;
+  --green-active: #28451D;
+  --lime: #C7F451;
+  --lime-soft: #A9D83C;
+  --mint: #87E5CB;
+  --text-primary: #F4F7F0;
+  --text-secondary: #ADB6AA;
+  --text-muted: #7E897E;
+  --border-subtle: #1D2B20;
+  --danger: #FF6464;
+  --success: #8FE36A;
+  --radius-card: 18px;
+  --radius-hero: 22px;
+  --radius-control: 12px;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--color-page);
-  color: var(--color-ink);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-/* Custom scrollbar */
+::selection {
+  background: rgba(199, 244, 81, 0.28);
+  color: #06100B;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -27,9 +54,41 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #1D2B20;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #28451D;
+}
+
+.font-tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.bg-glow-radial {
+  background: radial-gradient(circle at 50% 0%, rgba(20, 40, 15, 0.5) 0%, rgba(6, 16, 11, 0) 70%);
+}
+
+.bg-leaf-hero {
+  background-image:
+    radial-gradient(ellipse at 88% 18%, rgba(199, 244, 81, 0.08) 0%, transparent 42%),
+    radial-gradient(ellipse at 12% 88%, rgba(40, 69, 29, 0.55) 0%, transparent 50%),
+    linear-gradient(145deg, #14280F 0%, #0B1510 55%, #08110D 100%);
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@layer components {
+  .khazi-card {
+    @apply rounded-card bg-panel border border-borderSubtle shadow-card;
+  }
+  .khazi-input {
+    @apply w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-sm text-ink-primary placeholder:text-ink-muted focus:outline-none focus:border-lime/60;
+  }
 }
