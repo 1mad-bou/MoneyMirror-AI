@@ -60,9 +60,9 @@ Once recorded, transactions are indexed with dense vector embeddings (`FastEmbed
 
 ---
 
-## 📸 Screenshots & UI Preview
+## Screenshots & UI Preview
 
-### 🏠 Dashboard & 🧾 Receipt Scanning
+### Dashboard & Receipt Scanning
 | **Home Dashboard** | **Receipt Scanning & OCR Extraction** |
 |:---:|:---:|
 | ![Home Dashboard](imgs/home.png) | ![Scan Receipt](imgs/scan-receipt.png) |
@@ -70,7 +70,7 @@ Once recorded, transactions are indexed with dense vector embeddings (`FastEmbed
 
 <br>
 
-### 🤖 AI Financial Assistant & 💬 RAG Chatbot
+### AI Financial Assistant & RAG Chatbot
 | **AI Assistant Overview** | **Interactive Financial Chatbot** |
 |:---:|:---:|
 | ![AI Assistant Overview](imgs/ai_agent.png) | ![RAG Financial Chat](imgs/chat.png) |
