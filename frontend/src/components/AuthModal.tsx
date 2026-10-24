@@ -79,9 +79,9 @@ export default function AuthModal({ isOpen, onAuthenticated }: Props) {
       <div className="w-full max-w-md bg-panel rounded-hero border border-borderSubtle shadow-card p-6 sm:p-8 space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-control bg-greenDeep text-lime border border-borderSubtle mb-2 font-black text-xl">
-            K
+            M
           </div>
-          <h2 className="text-2xl font-extrabold text-ink-primary tracking-[0.14em]">KHAZI</h2>
+          <h2 className="text-2xl font-extrabold text-ink-primary tracking-[0.06em]">MoneyMirror</h2>
           <p className="text-xs text-ink-muted">Dark forest-green finance workspace</p>
         </div>
 

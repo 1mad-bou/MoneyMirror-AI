@@ -90,11 +90,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="h-[64px] px-5 border-b border-borderSubtle flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-control bg-greenDeep border border-borderSubtle flex items-center justify-center text-lime font-black">
-            K
+            M
           </div>
           <div>
-            <p className="font-extrabold text-[15px] tracking-[0.18em] text-ink-primary leading-none">
-              KHAZI
+            <p className="font-extrabold text-[15px] tracking-[0.08em] text-ink-primary leading-none">
+              MoneyMirror
             </p>
             <p className="text-[10px] text-ink-muted mt-0.5">Finance workspace</p>
           </div>

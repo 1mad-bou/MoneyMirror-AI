@@ -351,7 +351,7 @@ export default function SettingsView({
       {/* Logout Action */}
       <div className="rounded-card bg-panel border border-borderSubtle p-6 shadow-card flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold text-ink-primary">Log Out of KHAZI</p>
+          <p className="text-sm font-bold text-ink-primary">Log Out of MoneyMirror</p>
           <p className="text-xs text-ink-muted">Terminates session on this browser device</p>
         </div>
         <button

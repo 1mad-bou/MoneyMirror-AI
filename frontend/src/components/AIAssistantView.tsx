@@ -24,7 +24,7 @@ export const AIAssistantView: React.FC = () => {
     {
       role: 'assistant',
       content:
-        "Hello! I am KHAZI AI, your read-only personal financial copilot. I analyze your confirmed financial records to help you understand trends, monitor expenses, and identify opportunities to save. How can I assist you today?",
+        "Hello! I am MoneyMirror AI, your read-only personal financial copilot. I analyze your confirmed financial records to help you understand trends, monitor expenses, and identify opportunities to save. How can I assist you today?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -74,7 +74,7 @@ export const AIAssistantView: React.FC = () => {
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch (err: any) {
-      setError(err.message || 'Unable to connect to KHAZI AI assistant.');
+      setError(err.message || 'Unable to connect to MoneyMirror AI assistant.');
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +90,7 @@ export const AIAssistantView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-ink-primary tracking-tight">KHAZI AI Copilot</h2>
+              <h2 className="text-lg font-black text-ink-primary tracking-tight">MoneyMirror AI Copilot</h2>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-greenActive text-lime border border-borderSubtle">
                 Gemma 3 • RAG
               </span>
@@ -153,7 +153,7 @@ export const AIAssistantView: React.FC = () => {
               >
                 <div className="flex items-center justify-between text-[10px] text-ink-muted mb-1">
                   <span className="font-semibold uppercase tracking-wider">
-                    {isUser ? 'You' : 'KHAZI AI'}
+                    {isUser ? 'You' : 'MoneyMirror AI'}
                   </span>
                   <span className="font-mono">{m.timestamp}</span>
                 </div>

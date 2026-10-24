@@ -239,7 +239,7 @@ export default function App() {
         };
       case 'ai':
         return {
-          title: 'KHAZI AI',
+          title: 'MoneyMirror AI',
           subtitle: 'Read-only questions about your recorded finances.',
         };
       case 'cards':
@@ -254,7 +254,7 @@ export default function App() {
           subtitle: 'Profile, categories, and preferences.',
         };
       default:
-        return { title: 'KHAZI' };
+        return { title: 'MoneyMirror' };
     }
   };
 
@@ -271,10 +271,10 @@ export default function App() {
     return (
       <div className="min-h-screen bg-app bg-glow-radial flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 rounded-control bg-greenDeep text-lime border border-borderSubtle flex items-center justify-center font-extrabold text-2xl">
-          K
+          M
         </div>
         <p className="text-sm font-semibold text-ink-muted tracking-wider uppercase">
-          Loading KHAZI...
+          Loading MoneyMirror...
         </p>
       </div>
     );

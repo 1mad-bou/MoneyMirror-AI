@@ -10,7 +10,7 @@ export const GoalsView: React.FC = () => {
           Savings targets will appear here when the product stores them.
         </p>
       </div>
-      <div className="khazi-card p-8 text-center space-y-3">
+      <div className="moneymirror-card p-8 text-center space-y-3">
         <div className="mx-auto w-12 h-12 rounded-control bg-greenDeep border border-borderSubtle text-lime flex items-center justify-center">
           <Target className="w-5 h-5" />
         </div>

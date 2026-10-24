@@ -44,7 +44,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [aiMessages, setAiMessages] = useState<Array<{ role: 'assistant' | 'user'; text: string }>>([
     {
       role: 'assistant',
-      text: 'I am KHAZI AI, a read-only copilot. Ask about cash flow or spending that is already in your records.',
+      text: 'I am MoneyMirror AI, a read-only copilot. Ask about cash flow or spending that is already in your records.',
     },
   ]);
 
@@ -362,7 +362,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h2 className="text-xs font-extrabold tracking-wider text-ink-primary uppercase">KHAZI AI</h2>
+                  <h2 className="text-xs font-extrabold tracking-wider text-ink-primary uppercase">MoneyMirror AI</h2>
                   <span className="text-[9px] px-1.5 rounded bg-greenActive text-lime font-bold">Beta</span>
                 </div>
                 <p className="text-[10px] text-ink-muted">Financial copilot</p>
@@ -407,7 +407,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 }`}
               >
                 <p className="font-semibold text-[10px] text-ink-muted mb-1 uppercase tracking-wider">
-                  {m.role === 'user' ? 'You' : 'KHAZI AI'}
+                  {m.role === 'user' ? 'You' : 'MoneyMirror AI'}
                 </p>
                 <p className="whitespace-pre-line">{m.text}</p>
               </div>

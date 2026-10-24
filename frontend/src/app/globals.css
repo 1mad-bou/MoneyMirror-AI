@@ -85,9 +85,11 @@ body {
 }
 
 @layer components {
+  .moneymirror-card,
   .khazi-card {
     @apply rounded-card bg-panel border border-borderSubtle shadow-card;
   }
+  .moneymirror-input,
   .khazi-input {
     @apply w-full bg-app border border-borderSubtle rounded-control px-3 py-2 text-sm text-ink-primary placeholder:text-ink-muted focus:outline-none focus:border-lime/60;
   }
