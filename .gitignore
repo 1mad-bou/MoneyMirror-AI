@@ -139,3 +139,7 @@ test.js
 # ML and embeddings cache
 models/
 backend/models/
+
+# ML and embeddings cache
+models/
+backend/models/
