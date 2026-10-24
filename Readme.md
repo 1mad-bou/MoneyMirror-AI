@@ -1,4 +1,4 @@
-# MoneyMirror AI 🪞💰
+# MoneyMirror AI
 
 > **Intelligent Personal Finance Tracker with Receipt OCR, Natural Language Ingestion, and a Read-Only RAG Financial Assistant.**
 
@@ -9,29 +9,49 @@
 [![Docker](https://img.shields.io/badge/Container-Docker%20Compose-2496ED.svg?style=flat&logo=docker)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## Team
+ 
+**Team Name:** NET
+ 
+**Members:**
+- Mehdi AIT MOUSSE
+- Brahim Lidrissi
+- Imad Bouzina
+
+
+**Video Demo:** [Watch the MoneyMirror AI demo] demo-vedio.webm
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Project Flow & Architecture](#-project-flow--architecture)
+- [Video Demo](#video-demo)
+- [Overview](#overview)
+- [Project Flow & Architecture](#project-flow--architecture)
   - [Core Workflow](#1-the-core-pipeline)
   - [End-to-End System Flow](#2-end-to-end-system-flow)
-- [Key Features](#-key-features)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Environment Variables](#environment-variables)
   - [Running with Docker Compose](#running-with-docker-compose-recommended)
   - [Running Locally for Development](#running-locally-for-development)
-- [API Reference](#-api-reference)
-- [Security & Design Principles](#-security--design-principles)
-- [Testing](#-testing)
+- [API Reference](#api-reference)
+- [Security & Design Principles](#security--design-principles)
+- [Testing](#testing)
 
 ---
 
-## 🌟 Overview
+## Video Demo
+
+A short walkthrough of MoneyMirror AI, covering receipt scanning, natural language entry, draft review and confirmation, and the read-only RAG financial assistant:
+
+**[Watch the demo video](https://YOUR_VIDEO_DEMO_LINK_HERE)**
+
+---
+
+## Overview
 
 **MoneyMirror AI** is a personal finance management platform designed to eliminate the friction of tracking expenses. Instead of tedious manual entry, users can capture receipts via camera/upload or express transactions in natural language. An embedded AI vision and OCR engine extracts transaction metadata into drafts, allowing users to inspect and adjust the figures before confirming.
 
@@ -39,7 +59,7 @@ Once recorded, transactions are indexed with dense vector embeddings (`FastEmbed
 
 ---
 
-## 🔄 Project Flow & Architecture
+## Project Flow & Architecture
 
 ### 1. The Core Pipeline
 
@@ -130,19 +150,19 @@ sequenceDiagram
 
 ---
 
-## ⚡ Key Features
+## Key Features
 
-- **🧾 Smart Receipt Scanning & OCR**: Upload receipt images to instantly extract merchant names, line items, dates, and total amounts using a combined OCR and vision parser with deterministic fallback rules.
-- **💬 Natural Language Ingestion**: Express transactions in plain text; MoneyMirror extracts the amount, currency, category, and date into a reviewable draft.
-- **🛡️ Human-in-the-Loop Safety Invariant**: Neither OCR nor AI drafts ever write directly to the database. All transactions require explicit user confirmation.
-- **🤖 RAG Financial Chatbot**: A strictly read-only conversational assistant powered by `pgvector` and LLM integration (Gemini / Gemma compatible). Answers balance queries, computes category trends, and recommends spending reductions based solely on recorded transactions.
-- **📊 Activity Analytics & Cash Flow**: Real-time spending charts, category breakdown percentages, period filters (Month, Quarter, Year), and income vs. expense balance calculation.
-- **🎨 KHAZI Fintech Design System**: A responsive UI built with Tailwind CSS, utilizing a calm and trustworthy palette (Forest Green `#14270B`, Lime `#B8E83D`, Mint `#D8ECEA`, Light Grey-Green `#F2F3EE`).
-- **🔐 User Isolation & Multi-Tenancy**: Every database record, analytical aggregation, and vector similarity search is partitioned strictly by `user_id`.
+- **Smart Receipt Scanning & OCR**: Upload receipt images to instantly extract merchant names, line items, dates, and total amounts using a combined OCR and vision parser with deterministic fallback rules.
+- **Natural Language Ingestion**: Express transactions in plain text; MoneyMirror extracts the amount, currency, category, and date into a reviewable draft.
+- **Human-in-the-Loop Safety Invariant**: Neither OCR nor AI drafts ever write directly to the database. All transactions require explicit user confirmation.
+- **RAG Financial Chatbot**: A strictly read-only conversational assistant powered by `pgvector` and LLM integration (Gemini / Gemma compatible). Answers balance queries, computes category trends, and recommends spending reductions based solely on recorded transactions.
+- **Activity Analytics & Cash Flow**: Real-time spending charts, category breakdown percentages, period filters (Month, Quarter, Year), and income vs. expense balance calculation.
+- **KHAZI Fintech Design System**: A responsive UI built with Tailwind CSS, utilizing a calm and trustworthy palette (Forest Green `#14270B`, Lime `#B8E83D`, Mint `#D8ECEA`, Light Grey-Green `#F2F3EE`).
+- **User Isolation & Multi-Tenancy**: Every database record, analytical aggregation, and vector similarity search is partitioned strictly by `user_id`.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technologies |
 |---|---|
@@ -155,7 +175,7 @@ sequenceDiagram
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 MoneyMirror-AI/
@@ -215,7 +235,7 @@ MoneyMirror-AI/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -309,7 +329,7 @@ Visit [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 Interactive Swagger documentation is available at `/docs`. Below is a summary of core endpoints:
 
@@ -333,7 +353,7 @@ Interactive Swagger documentation is available at `/docs`. Below is a summary of
 
 ---
 
-## 🔒 Security & Design Principles
+## Security & Design Principles
 
 1. **Strict Human-in-the-Loop**:
    The `/api/receipts/scan` and `/api/ai/transaction-draft` endpoints **never write to the database**. They generate a transient draft for the user to review, correct, and explicitly commit.
@@ -346,7 +366,7 @@ Interactive Swagger documentation is available at `/docs`. Below is a summary of
 
 ---
 
-## 🧪 Testing
+## Testing
 
 The backend includes a comprehensive pytest suite covering authentication isolation, idempotency, read-only AI safety, and analytics calculations:
 
@@ -365,7 +385,6 @@ Tests include:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
